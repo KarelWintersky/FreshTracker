@@ -1,0 +1,12 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: freshtracker
+Source: -
+
+This package was debianized by Karel Wintersky <karel.wintersky@yandex.ru> on
+Sat, 29 Nov 2025 17:31:32 
+
+Upstream Author(s): Karel Wintersky <karel.wintersky@yandex.ru>
+
+Copyright:
+
+<Вставьте сюда информацию о копирайте>

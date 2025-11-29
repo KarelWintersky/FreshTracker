@@ -1,0 +1,31 @@
+#! /bin/sh
+
+set -e
+
+WWW_ROOT=/var/www/freshtracker/
+
+case "$1" in
+    configure)
+
+      if [ -d $WWW_ROOT ]; then
+        chown -R www-data:www-data $WWW_ROOT/*
+        exit 0
+      fi
+
+      echo "postinst can't find path: $WWW_ROOT!" >&2
+      exit 1
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
