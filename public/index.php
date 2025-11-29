@@ -126,8 +126,8 @@ function getProductList($db) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Учет продуктов питания</title>
-    <link rel="stylesheet" href="assets/flatpickr.min.css">
+    <title>FreshTracker - Учет продуктов</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         * {
             margin: 0;
@@ -143,12 +143,13 @@ function getProductList($db) {
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
+            position: relative;
         }
 
         .header {
@@ -156,6 +157,7 @@ function getProductList($db) {
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
@@ -164,22 +166,73 @@ function getProductList($db) {
             font-weight: 300;
         }
 
-        .content {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 0;
+        .main-content {
+            padding: 30px;
             min-height: 600px;
         }
 
-        .form-section {
-            background: #f8f9fa;
-            padding: 30px;
-            border-right: 1px solid #e9ecef;
+        .add-product-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
         }
 
-        .list-section {
-            padding: 30px;
+        .add-product-btn:hover {
+            transform: translateY(-2px);
+            background: #218838;
+        }
+
+        .form-panel {
+            position: fixed;
+            top: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
             background: white;
+            border-radius: 15px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            padding: 30px;
+            transition: top 0.4s ease;
+            z-index: 1000;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .form-panel.active {
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .close-panel {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6c757d;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-panel:hover {
+            background: #f8f9fa;
+            color: #dc3545;
         }
 
         .form-group {
@@ -225,7 +278,7 @@ function getProductList($db) {
         }
 
         .products-list {
-            max-height: 500px;
+            max-height: 600px;
             overflow-y: auto;
         }
 
@@ -289,12 +342,12 @@ function getProductList($db) {
 
         .empty-state {
             text-align: center;
-            padding: 40px;
+            padding: 60px;
             color: #6c757d;
         }
 
         .empty-state i {
-            font-size: 48px;
+            font-size: 64px;
             margin-bottom: 20px;
             opacity: 0.5;
         }
@@ -373,104 +426,133 @@ function getProductList($db) {
         .threshold-btn.active {
             background: #667eea;
         }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .panel-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #2c3e50;
+            font-size: 1.5em;
+        }
     </style>
 </head>
 <body>
+<div class="overlay" id="overlay"></div>
+
 <div class="container">
     <div class="header">
-        <h1>🍎 Учет продуктов</h1>
-        <p>Следите за сроками годности ваших продуктов</p>
+        <h1>🍎 FreshTracker</h1>
+        <p>Учет продуктов и контроль сроков годности</p>
+        <button class="add-product-btn" onclick="openFormPanel()">➕ Добавить продукт</button>
     </div>
 
-    <div class="content">
-        <!-- Форма добавления -->
-        <div class="form-section">
-            <form id="productForm">
-                <div class="form-group">
-                    <label for="name">Наименование продукта</label>
-                    <input type="text" id="name" name="name" required placeholder="Например: Гречневая крупа">
-                </div>
+    <div class="main-content">
+        <h2 style="margin-bottom: 20px; color: #2c3e50;">Список продуктов</h2>
 
-                <div class="form-group">
-                    <label for="type">Тип продукта</label>
-                    <select id="type" name="type" required onchange="updateWeightByType()">
-                        <option value="разное" selected>Разное</option>
-                        <option value="крупы">Крупы</option>
-                        <option value="макароны">Макароны</option>
-                        <option value="консервы">Консервы</option>
-                        <option value="масло">Масло</option>
-                        <option value="мука">Мука</option>
-                        <option value="специи">Специи</option>
-                        <option value="чай_кофе">Чай/Кофе</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="weight">Вес</label>
-                    <div class="input-with-prefix">
-                        <span class="input-prefix">⚖️</span>
-                        <input type="number" id="weight" name="weight" step="0.001" required placeholder="0.5">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="expiry_date">Срок годности</label>
-                    <input type="text" id="expiry_date" name="expiry_date" required
-                           placeholder="Выберите дату или используйте кнопки ниже">
-
-                    <div class="quick-days-buttons">
-                        <button type="button" class="quick-days-btn" onclick="setDays(3)">+3 дн</button>
-                        <button type="button" class="quick-days-btn" onclick="setDays(7)">+7 дн</button>
-                        <button type="button" class="quick-days-btn" onclick="setDays(14)">+14 дн</button>
-                        <button type="button" class="quick-days-btn" onclick="setDays(30)">+30 дн</button>
-                        <button type="button" class="quick-days-btn" onclick="setDays(60)">+60 дн</button>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="threshold_days">Порог предупреждения (дни)</label>
-                    <div class="input-with-prefix">
-                        <span class="input-prefix">⏰</span>
-                        <input type="number" id="threshold_days" name="threshold_days" value="7" min="1" max="365">
-                    </div>
-
-                    <div class="threshold-buttons">
-                        <button type="button" class="threshold-btn" onclick="setThreshold(3)">3 дн</button>
-                        <button type="button" class="threshold-btn" onclick="setThreshold(7)">7 дн</button>
-                        <button type="button" class="threshold-btn" onclick="setThreshold(14)">14 дн</button>
-                        <button type="button" class="threshold-btn" onclick="setThreshold(30)">30 дн</button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn">➕ Добавить продукт</button>
-            </form>
+        <div class="product-item header">
+            <div>Наименование</div>
+            <div>Вес</div>
+            <div>Тип</div>
+            <div>Срок годности</div>
+            <div>Статус</div>
+            <div>Действие</div>
         </div>
 
-        <!-- Список продуктов -->
-        <div class="list-section">
-            <h2 style="margin-bottom: 20px; color: #2c3e50;">Список продуктов</h2>
-
-            <div class="product-item header">
-                <div>Наименование</div>
-                <div>Вес</div>
-                <div>Тип</div>
-                <div>Срок годности</div>
-                <div>Статус</div>
-                <div>Действие</div>
-            </div>
-
-            <div id="productsList" class="products-list">
-                <div class="empty-state">
-                    <i>📦</i>
-                    <p>Нет добавленных продуктов</p>
-                </div>
+        <div id="productsList" class="products-list">
+            <div class="empty-state">
+                <i>📦</i>
+                <p>Нет добавленных продуктов</p>
+                <button class="btn" onclick="openFormPanel()" style="width: auto; margin-top: 20px;">Добавить первый продукт</button>
             </div>
         </div>
     </div>
 </div>
 
-<script src="assets/flatpickr.min.js"></script>
-<script src="assets/flatpickr-ru.min.js"></script>
+<!-- Панель добавления продукта -->
+<div class="form-panel" id="formPanel">
+    <button class="close-panel" onclick="closeFormPanel()">×</button>
+    <h3 class="panel-title">Добавить продукт</h3>
+
+    <form id="productForm">
+        <div class="form-group">
+            <label for="name">Наименование продукта</label>
+            <input type="text" id="name" name="name" required placeholder="Например: Гречневая крупа">
+        </div>
+
+        <div class="form-group">
+            <label for="type">Тип продукта</label>
+            <select id="type" name="type" required onchange="updateWeightByType()">
+                <option value="разное" selected>Разное</option>
+                <option value="крупы">Крупы</option>
+                <option value="макароны">Макароны</option>
+                <option value="консервы">Консервы</option>
+                <option value="масло">Масло</option>
+                <option value="мука">Мука</option>
+                <option value="специи">Специи</option>
+                <option value="чай_кофе">Чай/Кофе</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="weight">Вес</label>
+            <div class="input-with-prefix">
+                <span class="input-prefix">⚖️</span>
+                <input type="number" id="weight" name="weight" step="0.001" required placeholder="0.5">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="expiry_date">Срок годности</label>
+            <input type="text" id="expiry_date" name="expiry_date" required
+                   placeholder="Выберите дату или используйте кнопки ниже">
+
+            <div class="quick-days-buttons">
+                <button type="button" class="quick-days-btn" onclick="setDays(3)">+3 дн</button>
+                <button type="button" class="quick-days-btn" onclick="setDays(7)">+7 дн</button>
+                <button type="button" class="quick-days-btn" onclick="setDays(14)">+14 дн</button>
+                <button type="button" class="quick-days-btn" onclick="setDays(30)">+30 дн</button>
+                <button type="button" class="quick-days-btn" onclick="setDays(60)">+60 дн</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="threshold_days">Порог предупреждения (дни)</label>
+            <div class="input-with-prefix">
+                <span class="input-prefix">⏰</span>
+                <input type="number" id="threshold_days" name="threshold_days" value="7" min="1" max="365">
+            </div>
+
+            <div class="threshold-buttons">
+                <button type="button" class="threshold-btn" onclick="setThreshold(3)">3 дн</button>
+                <button type="button" class="threshold-btn" onclick="setThreshold(7)">7 дн</button>
+                <button type="button" class="threshold-btn" onclick="setThreshold(14)">14 дн</button>
+                <button type="button" class="threshold-btn" onclick="setThreshold(30)">30 дн</button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">➕ Добавить продукт</button>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
 <script>
     let datePicker;
 
@@ -496,7 +578,29 @@ function getProductList($db) {
             e.preventDefault();
             addProduct();
         });
+
+        // Закрытие панели по клику на оверлей
+        document.getElementById('overlay').addEventListener('click', closeFormPanel);
+
+        // Закрытие по ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeFormPanel();
+            }
+        });
     });
+
+    function openFormPanel() {
+        document.getElementById('formPanel').classList.add('active');
+        document.getElementById('overlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeFormPanel() {
+        document.getElementById('formPanel').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
 
     function initDatePicker() {
         datePicker = flatpickr("#expiry_date", {
@@ -566,6 +670,7 @@ function getProductList($db) {
                     <div class="empty-state">
                         <i>📦</i>
                         <p>Нет добавленных продуктов</p>
+                        <button class="btn" onclick="openFormPanel()" style="width: auto; margin-top: 20px;">Добавить первый продукт</button>
                     </div>
                 `;
             return;
@@ -637,6 +742,7 @@ function getProductList($db) {
                         btn.classList.remove('active');
                     });
 
+                    closeFormPanel();
                     loadProducts();
                     showNotification(result.message, 'success');
                 } else {
