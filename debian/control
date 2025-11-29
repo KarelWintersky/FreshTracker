@@ -1,0 +1,17 @@
+Package: freshtracker
+Version: 1.0-1
+Section: utils
+Priority: optional
+Architecture: all
+Depends: php8.0, php8.0-sqlite3, apache2 | nginx | lighttpd
+Maintainer: Your Name <your.email@domain.com>
+Description: Food inventory and expiry tracking system
+ FreshTracker is a web-based application for managing food products inventory
+ with expiry date monitoring. It provides alerts for soon-to-expire items
+ and helps maintain an organized pantry.
+ .
+ Features:
+  * Add, remove and track food products
+  * Expiry date monitoring with color-coded alerts
+  * SQLite database backend
+  * Simple and elegant web interface
