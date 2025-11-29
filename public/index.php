@@ -119,6 +119,22 @@ function getProductList($db) {
 
     echo json_encode($products);
 }
+
+// Функция для получения срока годности по умолчанию для типа продукта
+function getDefaultExpiryDays($type) {
+    $defaultExpiry = [
+        'разное' => 30,      // 30 дней по умолчанию
+        'крупы' => 365,      // 1 год
+        'макароны' => 180,   // 6 месяцев
+        'консервы' => 365,   // 1 год
+        'масло' => 30,       // 1 месяц
+        'мука' => 365,       // 1 год
+        'специи' => 180,     // 6 месяцев
+        'чай_кофе' => 180    // 6 месяцев
+    ];
+
+    return $defaultExpiry[$type] ?? 30;
+}
 ?>
 
 <!DOCTYPE html>
@@ -126,8 +142,9 @@ function getProductList($db) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="version" content="VERSION_PLACEHOLDER">
     <title>FreshTracker - Учет продуктов</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="assets/flatpickr.min.css">
     <style>
         * {
             margin: 0;
@@ -171,10 +188,22 @@ function getProductList($db) {
             min-height: 600px;
         }
 
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin: 0;
+        }
+
         .add-product-btn {
-            position: absolute;
-            top: 30px;
-            right: 30px;
             background: #28a745;
             color: white;
             border: none;
@@ -184,6 +213,7 @@ function getProductList($db) {
             font-size: 16px;
             font-weight: 600;
             transition: transform 0.2s;
+            white-space: nowrap;
         }
 
         .add-product-btn:hover {
@@ -202,14 +232,14 @@ function getProductList($db) {
             border-radius: 15px;
             box-shadow: 0 25px 50px rgba(0,0,0,0.3);
             padding: 30px;
-            transition: top 0.4s ease;
+            transition: top 0.8s ease;
             z-index: 1000;
             max-height: 90vh;
             overflow-y: auto;
         }
 
         .form-panel.active {
-            top: 50%;
+            top: 45%;
             transform: translate(-50%, -50%);
         }
 
@@ -451,6 +481,13 @@ function getProductList($db) {
             color: #2c3e50;
             font-size: 1.5em;
         }
+
+        .default-expiry-hint {
+            font-size: 12px;
+            color: #28a745;
+            margin-top: 5px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -460,11 +497,13 @@ function getProductList($db) {
     <div class="header">
         <h1>🍎 FreshTracker</h1>
         <p>Учет продуктов и контроль сроков годности</p>
-        <button class="add-product-btn" onclick="openFormPanel()">➕ Добавить продукт</button>
     </div>
 
     <div class="main-content">
-        <h2 style="margin-bottom: 20px; color: #2c3e50;">Список продуктов</h2>
+        <div class="section-header">
+            <h2 class="section-title">Список продуктов</h2>
+            <button class="add-product-btn" onclick="openFormPanel()">➕ Добавить продукт</button>
+        </div>
 
         <div class="product-item header">
             <div>Наименование</div>
@@ -498,7 +537,7 @@ function getProductList($db) {
 
         <div class="form-group">
             <label for="type">Тип продукта</label>
-            <select id="type" name="type" required onchange="updateWeightByType()">
+            <select id="type" name="type" required onchange="updateDefaultsByType()">
                 <option value="разное" selected>Разное</option>
                 <option value="крупы">Крупы</option>
                 <option value="макароны">Макароны</option>
@@ -508,6 +547,7 @@ function getProductList($db) {
                 <option value="специи">Специи</option>
                 <option value="чай_кофе">Чай/Кофе</option>
             </select>
+            <div class="default-expiry-hint" id="expiryHint"></div>
         </div>
 
         <div class="form-group">
@@ -529,6 +569,7 @@ function getProductList($db) {
                 <button type="button" class="quick-days-btn" onclick="setDays(14)">+14 дн</button>
                 <button type="button" class="quick-days-btn" onclick="setDays(30)">+30 дн</button>
                 <button type="button" class="quick-days-btn" onclick="setDays(60)">+60 дн</button>
+                <button type="button" class="quick-days-btn" id="defaultExpiryBtn" onclick="setDefaultExpiry()" style="background: #28a745;">По умолчанию</button>
             </div>
         </div>
 
@@ -551,8 +592,8 @@ function getProductList($db) {
     </form>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+<script src="assets/flatpickr.min.js"></script>
+<script src="assets/flatpickr-ru.min.js"></script>
 <script>
     let datePicker;
 
@@ -568,10 +609,35 @@ function getProductList($db) {
         'чай_кофе': '0.25'
     };
 
+    // Сроки годности по умолчанию для типов продуктов (в днях)
+    const defaultExpiryDays = {
+        'разное': 30,
+        'крупы': 365,
+        'макароны': 180,
+        'консервы': 365,
+        'масло': 30,
+        'мука': 365,
+        'специи': 180,
+        'чай_кофе': 180
+    };
+
+    // Описания сроков годности для подсказок
+    const expiryDescriptions = {
+        'разное': '30 дней',
+        'крупы': '1 год',
+        'макароны': '6 месяцев',
+        'консервы': '1 год',
+        'масло': '1 месяц',
+        'мука': '1 год',
+        'специи': '6 месяцев',
+        'чай_кофе': '6 месяцев'
+    };
+
     // Загрузка списка при загрузке страницы
     document.addEventListener('DOMContentLoaded', function() {
         loadProducts();
         initDatePicker();
+        updateExpiryHint();
 
         // Обработка формы
         document.getElementById('productForm').addEventListener('submit', function(e) {
@@ -614,6 +680,46 @@ function getProductList($db) {
         });
     }
 
+    function updateDefaultsByType() {
+        updateWeightByType();
+        updateExpiryHint();
+    }
+
+    function updateWeightByType() {
+        const type = document.getElementById('type').value;
+        const weightInput = document.getElementById('weight');
+
+        if (typeWeights[type]) {
+            weightInput.value = typeWeights[type];
+        }
+    }
+
+    function updateExpiryHint() {
+        const type = document.getElementById('type').value;
+        const hintElement = document.getElementById('expiryHint');
+
+        if (expiryDescriptions[type]) {
+            hintElement.textContent = `Срок годности по умолчанию: ${expiryDescriptions[type]}`;
+        } else {
+            hintElement.textContent = '';
+        }
+    }
+
+    function setDefaultExpiry() {
+        const type = document.getElementById('type').value;
+        const days = defaultExpiryDays[type] || 30;
+
+        const today = new Date();
+        today.setDate(today.getDate() + days);
+        datePicker.setDate(today);
+
+        // Подсветка кнопки "По умолчанию"
+        document.querySelectorAll('.quick-days-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById('defaultExpiryBtn').classList.add('active');
+    }
+
     function setDays(days) {
         const today = new Date();
         today.setDate(today.getDate() + days);
@@ -634,15 +740,6 @@ function getProductList($db) {
             btn.classList.remove('active');
         });
         event.target.classList.add('active');
-    }
-
-    function updateWeightByType() {
-        const type = document.getElementById('type').value;
-        const weightInput = document.getElementById('weight');
-
-        if (typeWeights[type]) {
-            weightInput.value = typeWeights[type];
-        }
     }
 
     function loadProducts() {
@@ -693,7 +790,7 @@ function getProductList($db) {
                 statusIcon = 'status-expired';
             } else if (daysRemaining <= product.threshold_days) {
                 statusClass = 'warning';
-                statusText = `Скоро истекает (${daysRemaining} дн.)`;
+                statusText = `Скоро истекает <br>&nbsp;&nbsp;&nbsp;&nbsp; (осталось ${daysRemaining} дн.)`;
                 statusIcon = 'status-warning';
             } else {
                 statusText = `ОК (${daysRemaining} дн.)`;
@@ -736,6 +833,7 @@ function getProductList($db) {
                     // Восстанавливаем порог по умолчанию
                     document.getElementById('threshold_days').value = '7';
                     datePicker.clear();
+                    updateExpiryHint();
 
                     // Сбрасываем подсветку кнопок
                     document.querySelectorAll('.quick-days-btn, .threshold-btn').forEach(btn => {
