@@ -13,7 +13,7 @@ install: ##@system Install package. Don't run it manually!!!
 	$(eval COMMIT_HASH := $(shell git rev-parse --short HEAD))
 	$(eval VERSION := $(shell git log --oneline --format=%B -n 1 HEAD | head -n 1))
 	$(eval DATE := $(shell git log --oneline --format="%at" -n 1 HEAD | xargs -I{} date -d @{} +%Y-%m-%d))
-	@# Append version comment to index
+	@# Append version comment to index.html
 	@echo "" >> $(PATH_PROJECT)/index.php
 	@printf "\n<!-- Version $(VERSION), from $(DATE), commit hash '$(COMMIT_HASH)' -->\n" >> $(PATH_PROJECT)/index.php
 	@printf "\n<!-- Version $(VERSION), from $(DATE), commit hash '$(COMMIT_HASH)' -->\n" >> $(PATH_PROJECT)/_version
