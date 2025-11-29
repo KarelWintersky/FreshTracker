@@ -1,142 +1,3 @@
-<?php
-// Создание базы данных при первом запуске
-$db = new PDO('sqlite:freshtracker.sqlite');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-// Создание таблицы если не существует
-$db->exec("
-    CREATE TABLE IF NOT EXISTS products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        weight REAL NOT NULL,
-        expiry_date TEXT NOT NULL,
-        type TEXT NOT NULL,
-        threshold_days INTEGER DEFAULT 7
-    )
-");
-
-// Обработка AJAX запросов
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
-
-    if (isset($_POST['action'])) {
-        switch ($_POST['action']) {
-            case 'add':
-                addProduct($db);
-                break;
-            case 'delete':
-                deleteProduct($db);
-                break;
-            case 'get_list':
-                getProductList($db);
-                break;
-        }
-    }
-    exit;
-}
-
-function addProduct($db) {
-    $name = trim($_POST['name']);
-    $weight = floatval($_POST['weight']);
-    $expiry_input = $_POST['expiry_date'];
-    $type = $_POST['type'];
-    $threshold_days = intval($_POST['threshold_days']);
-
-    if (empty($name) || $weight <= 0) {
-        echo json_encode(['success' => false, 'message' => 'Неверные данные']);
-        return;
-    }
-
-    // Обработка ввода даты
-    $expiry_date = processDateInput($expiry_input);
-    if (!$expiry_date) {
-        echo json_encode(['success' => false, 'message' => 'Неверный формат даты']);
-        return;
-    }
-
-    $stmt = $db->prepare("
-        INSERT INTO products (name, weight, expiry_date, type, threshold_days) 
-        VALUES (?, ?, ?, ?, ?)
-    ");
-
-    $success = $stmt->execute([$name, $weight, $expiry_date, $type, $threshold_days]);
-
-    echo json_encode([
-        'success' => $success,
-        'message' => $success ? 'Продукт добавлен' : 'Ошибка при добавлении'
-    ]);
-}
-
-function processDateInput($input) {
-    $input = trim($input);
-
-    // Если введено число - добавляем указанное количество дней к текущей дате
-    if (is_numeric($input)) {
-        $days = intval($input);
-        $date = new DateTime();
-        $date->modify("+{$days} days");
-        return $date->format('Y-m-d');
-    }
-
-    // Пробуем различные форматы дат
-    $formats = [
-        'Y-m-d',
-        'd.m.Y',
-        'd/m/Y',
-        'd-m-Y',
-        'Y/m/d'
-    ];
-
-    foreach ($formats as $format) {
-        $date = DateTime::createFromFormat($format, $input);
-        if ($date) {
-            return $date->format('Y-m-d');
-        }
-    }
-
-    return false;
-}
-
-function deleteProduct($db) {
-    $id = intval($_POST['id']);
-    $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
-    $success = $stmt->execute([$id]);
-
-    echo json_encode([
-        'success' => $success,
-        'message' => $success ? 'Продукт удален' : 'Ошибка при удалении'
-    ]);
-}
-
-function getProductList($db) {
-    $stmt = $db->query("
-        SELECT *, 
-               julianday(expiry_date) - julianday('now') as days_remaining
-        FROM products 
-        ORDER BY expiry_date ASC
-    ");
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    echo json_encode($products);
-}
-
-// Функция для получения срока годности по умолчанию для типа продукта
-function getDefaultExpiryDays($type) {
-    $defaultExpiry = [
-        'разное' => 30,      // 30 дней по умолчанию
-        'крупы' => 365,      // 1 год
-        'макароны' => 180,   // 6 месяцев
-        'консервы' => 365,   // 1 год
-        'масло' => 30,       // 1 месяц
-        'мука' => 365,       // 1 год
-        'специи' => 180,     // 6 месяцев
-        'чай_кофе' => 180    // 6 месяцев
-    ];
-
-    return $defaultExpiry[$type] ?? 30;
-}
-?>
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -488,6 +349,26 @@ function getDefaultExpiryDays($type) {
             margin-top: 5px;
             font-style: italic;
         }
+
+        @media (max-width: 768px) {
+            .product-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .product-item.header {
+                display: none;
+            }
+
+            .product-item div::before {
+                content: attr(data-label);
+                font-weight: bold;
+                display: block;
+                margin-bottom: 5px;
+                color: #6c757d;
+            }
+        }
     </style>
 </head>
 <body>
@@ -592,9 +473,10 @@ function getDefaultExpiryDays($type) {
     </form>
 </div>
 
-<script src="assets/flatpickr.min.js"></script>
-<script src="assets/flatpickr-ru.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
 <script>
+    const API_URL = 'freshtracker.php';
     let datePicker;
 
     // Веса по типам продуктов
@@ -746,7 +628,7 @@ function getDefaultExpiryDays($type) {
         const formData = new FormData();
         formData.append('action', 'get_list');
 
-        fetch('', {
+        fetch(API_URL, {
             method: 'POST',
             body: formData
         })
@@ -756,6 +638,7 @@ function getDefaultExpiryDays($type) {
             })
             .catch(error => {
                 console.error('Error:', error);
+                showNotification('Ошибка загрузки данных', 'error');
             });
     }
 
@@ -764,12 +647,12 @@ function getDefaultExpiryDays($type) {
 
         if (products.length === 0) {
             container.innerHTML = `
-                    <div class="empty-state">
-                        <i>📦</i>
-                        <p>Нет добавленных продуктов</p>
-                        <button class="btn" onclick="openFormPanel()" style="width: auto; margin-top: 20px;">Добавить первый продукт</button>
-                    </div>
-                `;
+                <div class="empty-state">
+                    <i>📦</i>
+                    <p>Нет добавленных продуктов</p>
+                    <button class="btn" onclick="openFormPanel()" style="width: auto; margin-top: 20px;">Добавить первый продукт</button>
+                </div>
+            `;
             return;
         }
 
@@ -799,16 +682,18 @@ function getDefaultExpiryDays($type) {
 
             const productElement = document.createElement('div');
             productElement.className = `product-item ${statusClass}`;
+
+            // Добавляем data-атрибуты для мобильной версии
             productElement.innerHTML = `
-                    <div><strong>${escapeHtml(product.name)}</strong></div>
-                    <div>${product.weight} кг</div>
-                    <div>${escapeHtml(product.type)}</div>
-                    <div>${formatDate(product.expiry_date)}</div>
-                    <div><span class="status-indicator ${statusIcon}"></span>${statusText}</div>
-                    <div>
-                        <button class="delete-btn" onclick="deleteProduct(${product.id})">🗑️ Удалить</button>
-                    </div>
-                `;
+                <div data-label="Наименование"><strong>${escapeHtml(product.name)}</strong></div>
+                <div data-label="Вес">${product.weight} кг</div>
+                <div data-label="Тип">${escapeHtml(product.type)}</div>
+                <div data-label="Срок годности">${formatDate(product.expiry_date)}</div>
+                <div data-label="Статус"><span class="status-indicator ${statusIcon}"></span>${statusText}</div>
+                <div data-label="Действие">
+                    <button class="delete-btn" onclick="deleteProduct(${product.id})">🗑️ Удалить</button>
+                </div>
+            `;
 
             container.appendChild(productElement);
         });
@@ -818,7 +703,7 @@ function getDefaultExpiryDays($type) {
         const formData = new FormData(document.getElementById('productForm'));
         formData.append('action', 'add');
 
-        fetch('', {
+        fetch(API_URL, {
             method: 'POST',
             body: formData
         })
@@ -826,16 +711,12 @@ function getDefaultExpiryDays($type) {
             .then(result => {
                 if (result.success) {
                     document.getElementById('productForm').reset();
-                    // Восстанавливаем выбранный тип по умолчанию
                     document.getElementById('type').value = 'разное';
-                    // Восстанавливаем вес по умолчанию для типа "разное"
                     document.getElementById('weight').value = '1.0';
-                    // Восстанавливаем порог по умолчанию
                     document.getElementById('threshold_days').value = '7';
                     datePicker.clear();
                     updateExpiryHint();
 
-                    // Сбрасываем подсветку кнопок
                     document.querySelectorAll('.quick-days-btn, .threshold-btn').forEach(btn => {
                         btn.classList.remove('active');
                     });
@@ -862,7 +743,7 @@ function getDefaultExpiryDays($type) {
         formData.append('action', 'delete');
         formData.append('id', id);
 
-        fetch('', {
+        fetch(API_URL, {
             method: 'POST',
             body: formData
         })
@@ -900,31 +781,28 @@ function getDefaultExpiryDays($type) {
     }
 
     function showNotification(message, type) {
-        // Создаем уведомление
         const notification = document.createElement('div');
         notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                border-radius: 8px;
-                color: white;
-                font-weight: 600;
-                z-index: 1000;
-                transform: translateX(400px);
-                transition: transform 0.3s ease;
-                ${type === 'success' ? 'background: #28a745;' : 'background: #dc3545;'}
-            `;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            ${type === 'success' ? 'background: #28a745;' : 'background: #dc3545;'}
+        `;
         notification.textContent = message;
 
         document.body.appendChild(notification);
 
-        // Анимация появления
         setTimeout(() => {
             notification.style.transform = 'translateX(0)';
         }, 100);
 
-        // Автоматическое скрытие
         setTimeout(() => {
             notification.style.transform = 'translateX(400px)';
             setTimeout(() => {
