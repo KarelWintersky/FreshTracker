@@ -45,9 +45,11 @@ dchv:		##@development Append release
 	dch --controlmaint -v $$VERSION
 
 dchn:		##@development Initial create changelog file
+	@dh_clean
 	@export DEBEMAIL="karel.wintersky@yandex.ru" && \
 	export DEBFULLNAME="Karel Wintersky" && \
 	dch --create --package $(PACKAGE_NAME)
+	@dh_clean
 
 # ------------------------------------------------
 # Add the following 'help' target to your makefile, add help text after each target name starting with '\#\#'
