@@ -1,8 +1,10 @@
-Package: freshtracker
-Version: 0.0.1
+Source: freshtracker
 Section: utils
 Priority: optional
+Maintainer: Karel Wintersky <karel.wintersky@yandex.ru>
+Build-Depends: debhelper (>= 10)
+
+Package: freshtracker
 Architecture: all
 Depends: php8.0, apache2 | nginx | lighttpd
-Maintainer: Karel Wintersky <karel.wintersky@yandex.ru>
 Description: Fresh Food Tracker
