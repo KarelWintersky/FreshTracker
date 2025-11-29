@@ -632,36 +632,56 @@
             method: 'POST',
             body: formData
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(products => {
                 displayProducts(products);
             })
             .catch(error => {
                 console.error('Error:', error);
                 showNotification('Ошибка загрузки данных', 'error');
+
+                // Показываем пустое состояние при ошибке
+                const container = document.getElementById('productsList');
+                container.innerHTML = `
+                <div class="empty-state">
+                    <i>⚠️</i>
+                    <p>Ошибка загрузки данных</p>
+                    <button class="btn" onclick="loadProducts()" style="width: auto; margin-top: 20px;">Повторить попытку</button>
+                </div>
+            `;
             });
     }
 
     function displayProducts(products) {
         const container = document.getElementById('productsList');
 
-        if (products.length === 0) {
+        if (!products || !Array.isArray(products) || products.length === 0) {
             container.innerHTML = `
-                <div class="empty-state">
-                    <i>📦</i>
-                    <p>Нет добавленных продуктов</p>
-                    <button class="btn" onclick="openFormPanel()" style="width: auto; margin-top: 20px;">Добавить первый продукт</button>
-                </div>
-            `;
+            <div class="empty-state">
+                <i>📦</i>
+                <p>Нет добавленных продуктов</p>
+                <button class="btn" onclick="openFormPanel()" style="width: auto; margin-top: 20px;">Добавить первый продукт</button>
+            </div>
+        `;
             return;
         }
 
         container.innerHTML = '';
 
         products.forEach(product => {
-            const expiryDate = new Date(product.expiry_date);
-            const now = new Date();
-            const daysRemaining = Math.floor((expiryDate - now) / (1000 * 60 * 60 * 24));
+            // Безопасное извлечение данных с значениями по умолчанию
+            const productId = parseInt(product.id) || 0;
+            const productName = escapeHtml(product.name || 'Неизвестно');
+            const productWeight = parseFloat(product.weight) || 0;
+            const productType = escapeHtml(product.type || 'разное');
+            const expiryDate = product.expiry_date || '';
+            const thresholdDays = parseInt(product.threshold_days) || 7;
+            const daysRemaining = parseFloat(product.days_remaining) || 0;
 
             let statusClass = '';
             let statusText = '';
@@ -671,50 +691,71 @@
                 statusClass = 'expired';
                 statusText = 'Просрочен';
                 statusIcon = 'status-expired';
-            } else if (daysRemaining <= product.threshold_days) {
+            } else if (daysRemaining <= thresholdDays) {
                 statusClass = 'warning';
-                statusText = `Скоро истекает <br>&nbsp;&nbsp;&nbsp;&nbsp; (осталось ${daysRemaining} дн.)`;
+                statusText = `Скоро истекает <br>&nbsp;&nbsp;&nbsp;&nbsp; (осталось ${Math.ceil(daysRemaining)} дн.)`;
                 statusIcon = 'status-warning';
             } else {
-                statusText = `ОК (${daysRemaining} дн.)`;
+                statusText = `ОК (${Math.ceil(daysRemaining)} дн.)`;
                 statusIcon = 'status-ok';
             }
 
             const productElement = document.createElement('div');
             productElement.className = `product-item ${statusClass}`;
 
-            // Добавляем data-атрибуты для мобильной версии
             productElement.innerHTML = `
-                <div data-label="Наименование"><strong>${escapeHtml(product.name)}</strong></div>
-                <div data-label="Вес">${product.weight} кг</div>
-                <div data-label="Тип">${escapeHtml(product.type)}</div>
-                <div data-label="Срок годности">${formatDate(product.expiry_date)}</div>
-                <div data-label="Статус"><span class="status-indicator ${statusIcon}"></span>${statusText}</div>
-                <div data-label="Действие">
-                    <button class="delete-btn" onclick="deleteProduct(${product.id})">🗑️ Удалить</button>
-                </div>
-            `;
+            <div data-label="Наименование"><strong>${productName}</strong></div>
+            <div data-label="Вес">${productWeight} кг</div>
+            <div data-label="Тип">${productType}</div>
+            <div data-label="Срок годности">${formatDate(expiryDate)}</div>
+            <div data-label="Статус"><span class="status-indicator ${statusIcon}"></span>${statusText}</div>
+            <div data-label="Действие">
+                <button class="delete-btn" onclick="deleteProduct(${productId})">🗑️ Удалить</button>
+            </div>
+        `;
 
             container.appendChild(productElement);
         });
     }
 
     function addProduct() {
-        const formData = new FormData(document.getElementById('productForm'));
+        const form = document.getElementById('productForm');
+        const formData = new FormData(form);
         formData.append('action', 'add');
+
+        // Валидация на клиенте
+        const name = formData.get('name');
+        const weight = parseFloat(formData.get('weight'));
+
+        if (!name || !name.trim()) {
+            showNotification('Введите название продукта', 'error');
+            return;
+        }
+
+        if (!weight || weight <= 0) {
+            showNotification('Введите корректный вес', 'error');
+            return;
+        }
 
         fetch(API_URL, {
             method: 'POST',
             body: formData
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(result => {
                 if (result.success) {
-                    document.getElementById('productForm').reset();
+                    form.reset();
                     document.getElementById('type').value = 'разное';
                     document.getElementById('weight').value = '1.0';
                     document.getElementById('threshold_days').value = '7';
-                    datePicker.clear();
+                    if (datePicker) {
+                        datePicker.clear();
+                    }
                     updateExpiryHint();
 
                     document.querySelectorAll('.quick-days-btn, .threshold-btn').forEach(btn => {
@@ -735,6 +776,11 @@
     }
 
     function deleteProduct(id) {
+        if (!id || id <= 0) {
+            showNotification('Неверный ID продукта', 'error');
+            return;
+        }
+
         if (!confirm('Вы уверены, что хотите удалить этот продукт?')) {
             return;
         }
@@ -747,7 +793,12 @@
             method: 'POST',
             body: formData
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(result => {
                 if (result.success) {
                     loadProducts();
@@ -763,15 +814,28 @@
     }
 
     function formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ru-RU', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return 'Неверная дата';
+            }
+            return date.toLocaleDateString('ru-RU', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        } catch (error) {
+            console.error('Ошибка форматирования даты:', error);
+            return 'Неверная дата';
+        }
     }
 
     function escapeHtml(unsafe) {
+        if (typeof unsafe !== 'string') {
+            // Если это не строка, преобразуем в строку
+            unsafe = String(unsafe);
+        }
+
         return unsafe
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
