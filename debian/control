@@ -7,5 +7,5 @@ Standards-Version: 3.9.8
 
 Package: freshtracker
 Architecture: all
-Depends: php8.0, apache2 | nginx | lighttpd
+Depends:
 Description: Fresh Food Tracker
