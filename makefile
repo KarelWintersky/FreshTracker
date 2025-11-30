@@ -4,7 +4,7 @@
 PACKAGE_NAME = freshtracker
 PROJECT = freshtracker
 PATH_PROJECT = $(DESTDIR)/var/www/$(PROJECT)
-INDEX_FILE ?= index.php
+INDEX_FILE ?= index.html
 
 install: ##@system Install package. Don't run it manually!!!
 	@echo Installing...
