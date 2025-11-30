@@ -209,8 +209,10 @@ function safeParseProducts(data) {
         threshold_days: parseInt(item.threshold_days) || 7,
         days_remaining: parseFloat(item.days_remaining) || 0,
         created_at: item.created_at || null,
-        updated_at: item.updated_at || null
-    })).filter(product => product.id > 0);
+        updated_at: item.updated_at || null,
+        is_deleted: Boolean(item.is_deleted || false),
+        deleted_at: item.deleted_at || null
+    })).filter(product => product.id > 0 && !product.is_deleted); // Фильтруем удаленные продукты
 }
 
 // Основные функции приложения

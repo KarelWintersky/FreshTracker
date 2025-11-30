@@ -1,3 +1,9 @@
+freshtracker (0.1.99) stable; urgency=medium
+
+  * using api.php + pure HTML 
+
+ -- Karel Wintersky <karel.wintersky@yandex.ru>  Sun, 30 Nov 2025 03:34:35 +0300
+
 freshtracker (0.0.99) stable; urgency=medium
 
   * First stable version.

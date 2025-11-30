@@ -1,14 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace FreshTracker;
-
-use DateTime;
-use PDO;
-use PDOException;
-use Throwable;
-
-class API
+class FreshTrackerAPI
 {
     private PDO $db;
     private array $config;
@@ -65,10 +58,10 @@ class API
                 expiry_date TEXT NOT NULL,
                 type TEXT NOT NULL,
                 threshold_days INTEGER DEFAULT 7,
+                is_deleted BOOLEAN DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                deleted_at DATETIME NULL,
-                is_deleted BOOLEAN DEFAULT 0                                                
+                deleted_at DATETIME NULL
             )
         ");
 
@@ -77,7 +70,8 @@ class API
         $this->db->exec("CREATE INDEX IF NOT EXISTS idx_is_deleted ON products(is_deleted)");
     }
 
-    public function handleRequest(): void {
+    public function handleRequest(): void
+    {
         try {
             $method = $_SERVER['REQUEST_METHOD'];
             $id = $this->getIdFromQuery();
@@ -86,7 +80,7 @@ class API
                 'GET' => $id ? $this->getProduct($id) : $this->getProducts(),
                 'POST' => $this->createProduct(),
                 'PUT' => $id ? $this->updateProduct($id) : $this->sendJsonError('ID продукта не указан', 400),
-                'DELETE' => $id ? $this->deleteProduct($id) : $this->sendJsonError('ID продукта не указан', 400),
+                'DELETE' => $id ? $this->softDeleteProduct($id) : $this->sendJsonError('ID продукта не указан', 400),
                 'OPTIONS' => $this->handleCors(),
                 default => $this->sendJsonError('Метод не поддерживается', 405)
             };
@@ -95,23 +89,12 @@ class API
         }
     }
 
-    private function getIdFromQuery(): ?int {
+    private function getIdFromQuery(): ?int
+    {
         $id = $_GET['id'] ?? null;
 
         if ($id && is_numeric($id)) {
             return (int)$id;
-        }
-
-        return null;
-    }
-
-    private function getIdFromPath(string $path): ?int
-    {
-        $parts = explode('/', trim($path, '/'));
-        $lastPart = end($parts);
-
-        if (is_numeric($lastPart)) {
-            return (int)$lastPart;
         }
 
         return null;
@@ -141,6 +124,7 @@ class API
                 SELECT *, 
                        julianday(expiry_date) - julianday('now') as days_remaining
                 FROM products 
+                WHERE is_deleted = 0
                 ORDER BY expiry_date ASC
             ");
 
@@ -163,7 +147,7 @@ class API
                 SELECT *, 
                        julianday(expiry_date) - julianday('now') as days_remaining
                 FROM products 
-                WHERE id = :id
+                WHERE id = :id AND is_deleted = 0
             ");
 
             $stmt->execute([':id' => $id]);
@@ -209,7 +193,7 @@ class API
             ]);
 
             $productId = $this->db->lastInsertId();
-            $this->getProduct((int)$productId); // Возвращаем созданный продукт
+            $this->getProduct((int)$productId);
         } catch (PDOException $e) {
             $this->sendJsonError('Ошибка при создании продукта: ' . $e->getMessage(), 500);
         }
@@ -220,7 +204,7 @@ class API
         $data = $this->getInputData();
 
         // Проверяем существование продукта
-        $checkStmt = $this->db->prepare("SELECT id FROM products WHERE id = :id");
+        $checkStmt = $this->db->prepare("SELECT id FROM products WHERE id = :id AND is_deleted = 0");
         $checkStmt->execute([':id' => $id]);
 
         if (!$checkStmt->fetch()) {
@@ -232,7 +216,7 @@ class API
             $this->sendJsonError('Ошибка валидации: ' . implode(', ', $validationErrors), 400);
         }
 
-        // Строим динамический UPDATE запрос на основе переданных полей
+        // Строим динамический UPDATE запрос
         $fields = [];
         $params = [':id' => $id];
 
@@ -274,20 +258,24 @@ class API
         $stmt = $this->db->prepare("
             UPDATE products 
             SET " . implode(', ', $fields) . "
-            WHERE id = :id
+            WHERE id = :id AND is_deleted = 0
         ");
 
         try {
             $stmt->execute($params);
-            $this->getProduct($id); // Возвращаем обновленный продукт
+            $this->getProduct($id);
         } catch (PDOException $e) {
             $this->sendJsonError('Ошибка при обновлении продукта: ' . $e->getMessage(), 500);
         }
     }
 
-    private function deleteProduct(int $id): void
+    private function softDeleteProduct(int $id): void
     {
-        $stmt = $this->db->prepare("DELETE FROM products WHERE id = :id");
+        $stmt = $this->db->prepare("
+            UPDATE products 
+            SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = :id AND is_deleted = 0
+        ");
 
         try {
             $stmt->execute([':id' => $id]);
@@ -373,7 +361,9 @@ class API
             'threshold_days' => (int)$product['threshold_days'],
             'days_remaining' => (float)($product['days_remaining'] ?? 0),
             'created_at' => $product['created_at'] ?? null,
-            'updated_at' => $product['updated_at'] ?? null
+            'updated_at' => $product['updated_at'] ?? null,
+            'is_deleted' => (bool)($product['is_deleted'] ?? false),
+            'deleted_at' => $product['deleted_at'] ?? null
         ];
     }
 
@@ -427,7 +417,7 @@ try {
         ]
     ];
 
-    $api = new \FreshTracker\API($config);
+    $api = new FreshTrackerAPI($config);
     $api->handleRequest();
 } catch (Throwable $e) {
     header('Content-Type: application/json');
@@ -435,6 +425,6 @@ try {
     http_response_code(500);
     echo json_encode([
         'error' => true,
-        'message' => 'Внутренняя ошибка сервера'
+        'message' => 'Внутренняя ошибка сервера: ' . $e->getMessage()
     ]);
 }
