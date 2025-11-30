@@ -22,8 +22,10 @@ install: ##@system Install package. Don't run it manually!!!
 	@sed -i 's/<meta name="version" content="VERSION_PLACEHOLDER">/<meta name="version" content="Version $(VERSION), build date: $(DATE), build hash: $(COMMIT_HASH)">/' $(PATH_PROJECT)/$(INDEX_FILE)
 
 build:		##@build Build project
+	@dh_clean
 	@echo Building project
 	@dpkg-buildpackage -rfakeroot --no-sign
+	@dh_clean
 
 update:		##@build Update project from GIT
 	@echo Updating project from GIT
