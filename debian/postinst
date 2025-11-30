@@ -1,14 +1,41 @@
-#! /bin/sh
+#!/bin/sh
 
 set -e
 
 WWW_ROOT=/var/www/freshtracker/
 
+# Функция для получения пользователя из nginx.conf
+get_nginx_user() {
+    local nginx_conf="/etc/nginx/nginx.conf"
+    local default_user="www-data"
+
+    if [ -f "$nginx_conf" ]; then
+        # Ищем строку 'user' в nginx.conf, игнорируя закомментированные строки
+        local nginx_user=$(grep -E '^\s*user\s+' "$nginx_conf" | head -1 | awk '{print $2}' | tr -d ';')
+
+        if [ -n "$nginx_user" ]; then
+            echo "$nginx_user"
+            return 0
+        fi
+    fi
+
+    echo "$default_user"
+    return 1
+}
+
 case "$1" in
     configure)
+      if [ -d "$WWW_ROOT" ]; then
+        # Получаем пользователя nginx
+        NGINX_USER=$(get_nginx_user)
 
-      if [ -d $WWW_ROOT ]; then
-        chown -R www-data:www-data $WWW_ROOT/*
+        echo "Setting ownership to $NGINX_USER for: $WWW_ROOT"
+        chown -R "$NGINX_USER":"$NGINX_USER" "$WWW_ROOT"/*
+
+        # Также устанавливаем правильные права на файлы
+        find "$WWW_ROOT" -type f -exec chmod 644 {} \;
+        find "$WWW_ROOT" -type d -exec chmod 755 {} \;
+
         exit 0
       fi
 
@@ -17,7 +44,7 @@ case "$1" in
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
-
+        # Ничего не делаем в этих случаях
     ;;
 
     *)
