@@ -9,9 +9,15 @@ get_nginx_user() {
     local nginx_conf="/etc/nginx/nginx.conf"
     local default_user="www-data"
 
+    # Если файл не существует, сразу возвращаем пользователя по умолчанию
+    if [ ! -f "$nginx_conf" ]; then
+        echo "$default_user"
+        return 0
+    fi
+
+    # Если файл существует, пытаемся извлечь пользователя
     if [ -f "$nginx_conf" ]; then
-        # Ищем строку 'user' в nginx.conf, игнорируя закомментированные строки
-        local nginx_user=$(grep -E '^\s*user\s+' "$nginx_conf" | head -1 | awk '{print $2}' | tr -d ';')
+        local nginx_user=$(grep -E '^\s*user\s+' "$nginx_conf" | head -1 | awk '{print $2}' | tr -d ';' 2>/dev/null || true)
 
         if [ -n "$nginx_user" ]; then
             echo "$nginx_user"
@@ -19,20 +25,20 @@ get_nginx_user() {
         fi
     fi
 
+    # В любом другом случае используем www-data
     echo "$default_user"
-    return 1
 }
 
 case "$1" in
     configure)
       if [ -d "$WWW_ROOT" ]; then
-        # Получаем пользователя nginx
+        # Получаем пользователя (всегда будет www-data если nginx.conf нет)
         NGINX_USER=$(get_nginx_user)
 
-        echo "Setting ownership to $NGINX_USER for: $WWW_ROOT"
-        chown -R "$NGINX_USER":"$NGINX_USER" "$WWW_ROOT"/*
+        # Устанавливаем владельца
+        chown -R "$NGINX_USER":"$NGINX_USER" "$WWW_ROOT"/
 
-        # Также устанавливаем правильные права на файлы
+        # Устанавливаем права
         find "$WWW_ROOT" -type f -exec chmod 644 {} \;
         find "$WWW_ROOT" -type d -exec chmod 755 {} \;
 
