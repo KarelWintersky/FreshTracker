@@ -7,12 +7,9 @@ use JetBrains\PhpStorm\NoReturn;
 class API
 {
     private \PDO $pdo;
-    private array $config;
 
     public function __construct(array $config)
     {
-        $this->config = $config;
-
         $db = new Database($config);
         $db->initializeDatabase();
         App::$pdo = $this->pdo = $db->getConnection();
@@ -29,48 +26,41 @@ class API
         return null;
     }
 
-    public function createProduct()
+    public function createProduct():bool
     {
-        (new Products())->createProduct();
+        return (new Products())->createProduct();
     }
 
-    public function getProducts()
+    public function getProducts():bool
     {
-        (new Products())->getProducts();
+        return (new Products())->getProducts();
     }
 
-
-
-
-
-    #[NoReturn]
-    public function sendJsonError($message = '', $code = 500):void
+    public function getProduct(int $id):bool
     {
-        $this->sendJsonResponse([
-            'error' => true,
-            'message' => $message
-        ], $code);
+        return (new Products())->getProduct($id);
     }
 
-    #[NoReturn]
-    public function sendJsonResponse($data, int $statusCode = 200): void
+    public function updateProduct($id):bool
     {
-        header('Content-Type: application/json');
-        header('Access-Control-Allow-Origin: *');
-        http_response_code($statusCode);
-        echo json_encode($data, JSON_NUMERIC_CHECK | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        exit; //@todo ???
+        return (new Products())->updateProduct($id);
     }
 
-    #[NoReturn]
+    public function deleteProduct($id):bool
+    {
+        return (new Products())->deleteProduct($id);
+    }
+
+    public function sendJsonError($message = '', $code = 500):bool
+    {
+        Response::setError($message, $code);
+        return true;
+    }
+
     public function handleCORS(): void
     {
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, Authorization');
-        header('Content-Type: application/json');
-        http_response_code(200);
-        exit;
+        Response::sendCORS();
     }
+
 
 }

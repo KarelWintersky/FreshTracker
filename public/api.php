@@ -45,7 +45,7 @@ try {
         'GET' => $id ? $api->getProduct($id) : $api->getProducts(),
         'POST' => $api->createProduct(),
         'PUT' => $id ? $api->updateProduct($id) : $api->sendJsonError('ID продукта не указан', 400),
-        'DELETE' => $id ? $api->softDeleteProduct($id) : $api->sendJsonError('ID продукта не указан', 400),
+        'DELETE' => $id ? $api->deleteProduct($id) : $api->sendJsonError('ID продукта не указан', 400),
         'OPTIONS' => $api->handleCORS(),
         default => $api->sendJsonError('Метод не поддерживается', 405)
     };

@@ -33,7 +33,7 @@ class Products
         ];
     }
 
-    public function getProducts(): void
+    public function getProducts(): bool
     {
         try {
             $stmt = $this->db->query("
@@ -52,13 +52,14 @@ class Products
 
             Response::set($products);
 
-            // $this->sendJsonResponse($products);
         } catch (PDOException $e) {
             throw new \RuntimeException('Ошибка загрузки продуктов: ' . $e->getMessage(), 500);
         }
+
+        return true;
     }
 
-    public function getProduct(int $id): void
+    public function getProduct(int $id):bool
     {
         try {
             $stmt = $this->db->prepare("
@@ -73,13 +74,15 @@ class Products
 
             if (!$product) {
                 Response::setError('Продукт не найден', 404);
-                return;
+                return false;
             }
 
             Response::set($this->formatProduct($product));
         } catch (PDOException $e) {
             throw new \RuntimeException('Ошибка загрузки продукта: ' . $e->getMessage(), 500);
         }
+
+        return true;
     }
 
     public function createProduct():bool
@@ -120,10 +123,99 @@ class Products
         return true;
     }
 
-    private function _createProduct(): void
+    public function updateProduct(int $id): bool
     {
+        $data = Request::getInputData();
 
+        // Проверяем существование продукта
+        $checkStmt = $this->db->prepare("SELECT id FROM products WHERE id = :id AND is_deleted = 0");
+        $checkStmt->execute([':id' => $id]);
 
+        if (!$checkStmt->fetch()) {
+            throw  new \RuntimeException('Продукт не найден', 404);
+        }
+
+        $validationErrors = Validator::validateProductData($data, true);
+        if (!empty($validationErrors)) {
+            throw new \RuntimeException('Ошибка валидации: ' . implode(', ', $validationErrors), 400);
+        }
+
+        // Строим динамический UPDATE запрос
+        $fields = [];
+        $params = [':id' => $id];
+
+        if (isset($data['name'])) {
+            $fields[] = 'name = :name';
+            $params[':name'] = $data['name'];
+        }
+
+        if (isset($data['weight'])) {
+            $fields[] = 'weight = :weight';
+            $params[':weight'] = (float)$data['weight'];
+        }
+
+        if (isset($data['expiry_date'])) {
+            $expiry_date = Validator::processDateInput($data['expiry_date']);
+            if (!$expiry_date) {
+                throw new \RuntimeException('Неверный формат даты', 400);
+            }
+            $fields[] = 'expiry_date = :expiry_date';
+            $params[':expiry_date'] = $expiry_date;
+        }
+
+        if (isset($data['type'])) {
+            $fields[] = 'type = :type';
+            $params[':type'] = $data['type'];
+        }
+
+        if (isset($data['threshold_days'])) {
+            $fields[] = 'threshold_days = :threshold_days';
+            $params[':threshold_days'] = (int)$data['threshold_days'];
+        }
+
+        $fields[] = 'updated_at = CURRENT_TIMESTAMP';
+
+        if (empty($fields)) {
+            throw new \RuntimeException('Нет данных для обновления', 400);
+        }
+
+        $stmt = $this->db->prepare("
+            UPDATE products 
+            SET " . implode(', ', $fields) . "
+            WHERE id = :id AND is_deleted = 0
+        ");
+
+        try {
+            $stmt->execute($params);
+            $this->getProduct($id);
+        } catch (PDOException $e) {
+            throw new \RuntimeException('Ошибка при обновлении продукта: ' . $e->getMessage(), 500);
+        }
+
+        return true;
+    }
+
+    public function deleteProduct(int $id): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE products 
+            SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = :id AND is_deleted = 0
+        ");
+
+        try {
+            $stmt->execute([':id' => $id]);
+
+            if ($stmt->rowCount() > 0) {
+                Response::set(['message' => 'Продукт удален']);
+            } else {
+                throw new \RuntimeException('Продукт не найден', 404);
+            }
+        } catch (PDOException $e) {
+            throw new \RuntimeException('Ошибка при удалении продукта: ' . $e->getMessage(), 500);
+        }
+
+        return true;
     }
 
 }

@@ -376,6 +376,7 @@ function openFormPanel() {
     document.getElementById('formPanel').classList.add('active');
     document.getElementById('overlay').classList.add('active');
     document.body.style.overflow = 'hidden';
+    document.getElementById('name').focus();
 }
 
 function closeFormPanel() {

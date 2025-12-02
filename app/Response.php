@@ -9,21 +9,25 @@ class Response
 
     public static bool $is_error = false;
 
-    public static function set($data = '', $code = 200)
+    public static function set(string|array $data = '', $code = 200): void
     {
         self::$code = $code;
         self::$data = $data;
     }
 
-    public static function setError($data = '', $code = 200)
+    public static function setError($data = '', $code = 200): void
     {
         self::$code = $code;
         self::$data = $data;
         self::$is_error = true;
     }
 
-    public static function send()
+    public static function send(): void
     {
+        if (headers_sent()) {
+            return;
+        }
+
         header('Content-Type: application/json');
         header('Access-Control-Allow-Origin: *');
         http_response_code(self::$code);
@@ -35,7 +39,7 @@ class Response
         echo self::$data;
     }
 
-    public static function sendCORS()
+    public static function sendCORS(): void
     {
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
