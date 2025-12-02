@@ -2,17 +2,17 @@
 
 use FreshTracker\App;
 
-if (!defined("START_TIME")) { define("START_TIME", microtime(true)); }
-if (!defined("CONFIG_PATH")) { define("CONFIG_PATH", $_SERVER['APP_CONFIG'] ?? __DIR__ . DIRECTORY_SEPARATOR . 'config' ); };
+if (!defined("CONFIG_PATH")) { define("CONFIG_PATH", $_SERVER['APP_CONFIG'] ?? __DIR__ . '/../freshtracker.yml' ); };
 if (!defined("DATABASE_PATH")) { define("DATABASE_PATH", $_SERVER['APP_DATABASE'] ?? __DIR__ . '/../freshtracker.sqlite' ); };
-if (!defined("IS_PRODUCTION")) { define("IS_PRODUCTION", !is_file(__DIR__ . '/../composer.lock')); }
 
-if (IS_PRODUCTION === false) {
-    require_once __DIR__ . '/../vendor/autoload.php';
+if (!defined("START_TIME")) { define("START_TIME", microtime(true)); }
+if (!defined("PHAR_PATH")) { define("PHAR_PATH", __DIR__ . '/../freshtracker.phar'); }
+
+if (is_file(PHAR_PATH)) {
+    require_once PHAR_PATH;
 } else {
-    require_once __DIR__ . '/freshtracker.phar';
+    require_once __DIR__ . '/../vendor/autoload.php';
 }
-
 
 $config = [
     'database' => [

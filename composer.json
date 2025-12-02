@@ -1,0 +1,22 @@
+{
+    "name": "karelwintersky/freshtracker",
+    "description": "Fresh Tracker",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "karelwintersky",
+            "email": "karel@wintersky.ru"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "FreshTracker\\": "app/"
+        }
+    },
+    "require": {
+        "ext-pdo": "*",
+        "karelwintersky/arris.router": "^2.2",
+        "karelwintersky/arris.logger": "^2.1"
+    }
+}

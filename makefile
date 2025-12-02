@@ -9,7 +9,9 @@ INDEX_FILE ?= index.html
 install: ##@system Install package. Don't run it manually!!!
 	@echo Installing...
 	install -d $(PATH_PROJECT)
-	cp -r public/* $(PATH_PROJECT)/
+	cp -r public $(PATH_PROJECT)/
+	cp -r app $(PATH_PROJECT)/
+	install -d $(PATH_PROJECT)/logs
 
 	@# Get version info
 	$(eval COMMIT_HASH := $(shell git rev-parse --short HEAD))
@@ -19,7 +21,7 @@ install: ##@system Install package. Don't run it manually!!!
 	@echo "" >> $(PATH_PROJECT)/$(INDEX_FILE)
 	@printf "\n<!-- Version $(VERSION), from $(DATE), commit hash '$(COMMIT_HASH)' -->\n" >> $(PATH_PROJECT)/$(INDEX_FILE)
 	@printf "\n<!-- Version $(VERSION), from $(DATE), commit hash '$(COMMIT_HASH)' -->\n" >> $(PATH_PROJECT)/_version
-	@sed -i 's/<meta name="version" content="VERSION_PLACEHOLDER">/<meta name="version" content="Version $(VERSION), build date: $(DATE), build hash: $(COMMIT_HASH)">/' $(PATH_PROJECT)/$(INDEX_FILE)
+	@sed -i 's/VERSION_PLACEHOLDER/Version $(VERSION), build date: $(DATE), build hash: $(COMMIT_HASH)"/' $(PATH_PROJECT)/$(INDEX_FILE)
 
 build:		##@build Build project
 	@dh_clean
@@ -30,6 +32,13 @@ build:		##@build Build project
 update:		##@build Update project from GIT
 	@echo Updating project from GIT
 	git pull --no-rebase
+
+phar:	##@build Compile PHAR file
+	@box compile --config=box.json
+
+pharlist:	##@build List of PHAR file
+	@box info --list homestead.phar
+
 
 help:
 	@perl -e '$(HELP_ACTION)' $(MAKEFILE_LIST)

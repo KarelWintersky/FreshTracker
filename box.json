@@ -1,0 +1,44 @@
+{
+    "main": "vendor/autoload.php",
+    "output": "freshtracker.phar",
+    "force-autodiscovery": true,
+    "directories": ["vendor", "app"],
+
+    "stub": false,
+    "compression": "GZ",
+
+    "check-requirements": false,
+
+    "blacklist": [
+        "README.md",
+        "CHANGELOG.md",
+        "LICENSE",
+        "config",
+        "icons",
+        ".box"
+    ],
+    "finder": [
+        {
+            "notName": "/LICENSE|.*\\.md|.*\\.dist|Makefile|composer\\.json|composer\\.lock/",
+            "exclude": [
+                "doc",
+                "test",
+                "tests",
+                "vendor-bin",
+                ".gitignore",
+                ".coveralls.yml",
+                ".php_cs.dist",
+                ".travis.yml",
+                "composer.lock",
+                "config.example.php",
+                "phpstan.neon",
+                "phpunit.xml"
+            ],
+            "in": "vendor"
+        },
+        {
+            "name": "composer.json",
+            "in": "."
+        }
+    ]
+}
