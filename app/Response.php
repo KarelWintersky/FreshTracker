@@ -5,7 +5,7 @@ namespace FreshTracker;
 class Response
 {
     public static string|array $data;
-    public static int $code;
+    public static int $code = 200;
 
     public static bool $is_error = false;
 
@@ -30,6 +30,7 @@ class Response
 
         header('Content-Type: application/json');
         header('Access-Control-Allow-Origin: *');
+
         http_response_code(self::$code);
 
         if (is_array(self::$data)) {

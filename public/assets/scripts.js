@@ -1,4 +1,4 @@
-const API_BASE_URL = 'api.php';
+const API_BASE_URL = '/api';
 
 // Веса по типам продуктов
 const typeWeights = {
@@ -40,8 +40,13 @@ const expiryDescriptions = {
 let datePicker;
 
 class ProductAPI {
+
+    /**
+     * Получить все продукты
+     * @returns {Promise<any>}
+     */
     static async getAll() {
-        const response = await fetch(API_BASE_URL, {
+        const response = await fetch(`${API_BASE_URL}/`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -56,8 +61,17 @@ class ProductAPI {
         return await response.json();
     }
 
+    /**
+     * Получить продукт по ID
+     *
+     * old: `${API_BASE_URL}?id=${id}`
+     * new: ``
+     *
+     * @param id
+     * @returns {Promise<any>}
+     */
     static async get(id) {
-        const response = await fetch(`${API_BASE_URL}?id=${id}`, {
+        const response = await fetch(`${API_BASE_URL}/${id}/`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -72,8 +86,14 @@ class ProductAPI {
         return await response.json();
     }
 
+    /**
+     * Запрос на создание продукта
+     *
+     * @param productData
+     * @returns {Promise<any>}
+     */
     static async create(productData) {
-        const response = await fetch(API_BASE_URL, {
+        const response = await fetch(`${API_BASE_URL}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -89,8 +109,17 @@ class ProductAPI {
         return await response.json();
     }
 
+    /**
+     * Запрос на обновление продукта
+     *
+     * old: `${API_BASE_URL}?id=${id}`
+     *
+     * @param id
+     * @param productData
+     * @returns {Promise<any>}
+     */
     static async update(id, productData) {
-        const response = await fetch(`${API_BASE_URL}?id=${id}`, {
+        const response = await fetch(`${API_BASE_URL}/${id}/`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -106,8 +135,14 @@ class ProductAPI {
         return await response.json();
     }
 
+    /**
+     * Запрос на удаление продукта
+     *
+     * @param id
+     * @returns {Promise<any>}
+     */
     static async delete(id) {
-        const response = await fetch(`${API_BASE_URL}?id=${id}`, {
+        const response = await fetch(`${API_BASE_URL}/${id}/`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -363,7 +398,7 @@ async function deleteProduct(id) {
 
     try {
         await ProductAPI.delete(id);
-        loadProducts();
+        await loadProducts();
         showNotification('Продукт удален', 'success');
     } catch (error) {
         console.error('Error:', error);

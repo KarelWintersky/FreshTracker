@@ -1,6 +1,9 @@
 <?php
 
+use Arris\AppRouter;
+use Arris\Exceptions\AppRouterNotFoundException;
 use FreshTracker\App;
+use FreshTracker\Products;
 
 if (!defined("CONFIG_PATH")) { define("CONFIG_PATH", $_SERVER['APP_CONFIG'] ?? __DIR__ . '/../freshtracker.yml' ); };
 if (!defined("DATABASE_PATH")) { define("DATABASE_PATH", $_SERVER['APP_DATABASE'] ?? __DIR__ . '/../freshtracker.sqlite' ); };
@@ -41,14 +44,48 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
     $id = $api->getIdFromQuery();
 
-    match ($method) {
+    AppRouter::init(
+        logger: null,
+        allowEmptyHandlers: true,
+    );
+
+    AppRouter::addHandler(Products::class, new Products());
+
+    // Определяем маршруты для продуктов
+   /* AppRouter::group(prefix: '/products', callback: function () {
+        AppRouter::get('/', [Products::class, 'getProducts'], 'products.index');
+        AppRouter::get('/{id}/', [Products::class, 'getProduct'], 'products.show');
+
+        AppRouter::post('/', [Products::class, 'createProduct'], 'products.store');
+        AppRouter::put('/{id}/', [Products::class, 'updateProduct'], 'products.update');
+
+        AppRouter::delete('/{id}/', [Products::class, 'deleteProduct'], 'products.destroy');
+
+        // AppRouter::addRoute('OPTIONS', '/', [Products::class, 'options'], 'products.options');
+    });*/
+
+    AppRouter::group(prefix: '/api', callback: function () {
+        AppRouter::get('/', [ Products::class, 'getProducts']);
+        AppRouter::get('/{id}/', [ Products::class, 'getProduct']);
+
+        AppRouter::post('/', [ Products::class, 'createProduct']);
+
+        AppRouter::put('/{id}/', [ Products::class, 'updateProduct']);
+        AppRouter::delete('/{id}/', [ Products::class, 'deleteProduct']);
+
+        AppRouter::options('/', [ \FreshTracker\Response::class, 'sendCORS ']);
+    });
+
+    AppRouter::dispatch();
+
+    /*match ($method) {
         'GET' => $id ? $api->getProduct($id) : $api->getProducts(),
         'POST' => $api->createProduct(),
         'PUT' => $id ? $api->updateProduct($id) : $api->sendJsonError('ID продукта не указан', 400),
         'DELETE' => $id ? $api->deleteProduct($id) : $api->sendJsonError('ID продукта не указан', 400),
         'OPTIONS' => $api->handleCORS(),
         default => $api->sendJsonError('Метод не поддерживается', 405)
-    };
+    };*/
 
 } catch (Throwable $e) {
 
