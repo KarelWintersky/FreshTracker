@@ -16,7 +16,6 @@
     },
     "require": {
         "ext-pdo": "*",
-        "karelwintersky/arris.router": "^2.2",
-        "karelwintersky/arris.logger": "^2.1"
+        "karelwintersky/arris.router": "^2.2"
     }
 }
