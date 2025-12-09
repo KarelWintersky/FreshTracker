@@ -1,4 +1,5 @@
 const API_BASE_URL = '/api';
+const API_PRODUCTS_URL = '/api/products';
 
 // Конфигурация типов продуктов
 const PRODUCT_TYPES = {
@@ -52,10 +53,12 @@ class ProductAPI {
      * Выполнить HTTP-запрос
      * @param {string} endpoint
      * @param {object} options
+     * @param target
+     *
      * @returns {Promise<any>}
      */
-    static async _request(endpoint, options = {}) {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    static async _request(endpoint, options = {}, target = API_PRODUCTS_URL) {
+        const response = await fetch(`${target}${endpoint}`, {
             headers: {
                 'Content-Type': 'application/json',
             },
