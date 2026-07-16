@@ -11,7 +11,7 @@
 <body>
 <div class="overlay" id="overlay"></div>
 
-<div class="container">
+<div class="container" id="mainApp">
     <div class="header">
         <h1>🍎 FreshTracker</h1>
         <p>Учет продуктов и контроль сроков годности</p>
@@ -34,15 +34,13 @@
 
         <div id="productsList" class="products-list">
             <div class="empty-state">
-                <i>📦</i>
-                <p>Нет добавленных продуктов</p>
-                <button class="btn" onclick="openFormPanel()" style="width: auto; margin-top: 20px;">Добавить первый продукт</button>
+                <i>⏳</i>
+                <p>Загрузка...</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Панель добавления продукта -->
 <div class="form-panel" id="formPanel">
     <button class="close-panel" onclick="closeFormPanel()">×</button>
     <h3 class="panel-title">Добавить продукт</h3>

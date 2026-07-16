@@ -2,6 +2,7 @@
 
 use Arris\AppRouter;
 use FreshTracker\App;
+use FreshTracker\Config;
 use FreshTracker\Products;
 use FreshTracker\Response;
 
@@ -18,17 +19,17 @@ if (is_file(PHAR_PATH)) {
 }
 
 $config = [
-    'database' => [
-        'path' => DATABASE_PATH,
-        'options' => [
+    'database'  => [
+        'path'      => DATABASE_PATH,
+        'options'   => [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false
         ]
     ],
     'defaults' => [
-        'threshold_days' => 7,
-        'type' => 'разное'
+        'threshold_days'    => 7,
+        'type'              => 'разное'
     ],
     'validation' => [
         'max_weight' => 1000,
@@ -40,8 +41,6 @@ $config = [
 App::init($config);
 
 try {
-    $method = $_SERVER['REQUEST_METHOD'];
-
     AppRouter::init(
         logger: null,
         allowEmptyHandlers: true,
@@ -49,7 +48,6 @@ try {
 
     AppRouter::addHandler(Products::class, new Products());
 
-    // перенести в группу products, потому что будет еще Auth
     AppRouter::group(prefix: '/api', callback: function () {
 
         AppRouter::group(prefix: '/products', callback: function () {
@@ -62,20 +60,14 @@ try {
             AppRouter::put('/{id}/', [ Products::class, 'updateProduct']);
             AppRouter::delete('/{id}/', [ Products::class, 'deleteProduct']);
 
-            AppRouter::options('/', [ \FreshTracker\Response::class, 'sendCORS ']);
-
+            AppRouter::options('/', [ Response::class, 'sendCORS']);
         });
     });
 
     AppRouter::dispatch();
 
 } catch (Throwable $e) {
-
-    \FreshTracker\Response::setError($e->getMessage(), $e->getCode());
     Response::setError($e->getMessage(), $e->getCode());
-
 } finally {
-
-    \FreshTracker\Response::send();
-
+    Response::send();
 }

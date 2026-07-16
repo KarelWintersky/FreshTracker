@@ -2,8 +2,6 @@
 
 namespace FreshTracker;
 
-use PDO;
-
 class Config
 {
     public static function mergeWithDefaults(array $config): array
@@ -11,11 +9,7 @@ class Config
         $defaults = [
             'database' => [
                 'path' => 'freshtracker.sqlite',
-                'options' => [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false
-                ]
+                'options' => []
             ],
             'defaults' => [
                 'threshold_days' => 7,
@@ -30,5 +24,4 @@ class Config
 
         return array_replace_recursive($defaults, $config);
     }
-
 }

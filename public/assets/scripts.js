@@ -1,7 +1,6 @@
 const API_BASE_URL = '/api';
 const API_PRODUCTS_URL = '/api/products';
 
-// Конфигурация типов продуктов
 const PRODUCT_TYPES = {
     'разное': {
         weight: '1.0',
@@ -45,66 +44,8 @@ const PRODUCT_TYPES = {
     }
 };
 
-// Глобальные переменные
 let datePicker;
 
-class ProductAPI {
-    /**
-     * Выполнить HTTP-запрос
-     * @param {string} endpoint
-     * @param {object} options
-     * @param target
-     *
-     * @returns {Promise<any>}
-     */
-    static async _request(endpoint, options = {}, target = API_PRODUCTS_URL) {
-        const response = await fetch(`${target}${endpoint}`, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            ...options
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({
-                message: `HTTP error! status: ${response.status}`
-            }));
-            throw new Error(errorData.message || 'Unknown error');
-        }
-
-        return response.json();
-    }
-
-    static async getAll() {
-        return this._request('/');
-    }
-
-    static async get(id) {
-        return this._request(`/${id}/`);
-    }
-
-    static async create(productData) {
-        return this._request('/', {
-            method: 'POST',
-            body: JSON.stringify(productData)
-        });
-    }
-
-    static async update(id, productData) {
-        return this._request(`/${id}/`, {
-            method: 'PUT',
-            body: JSON.stringify(productData)
-        });
-    }
-
-    static async delete(id) {
-        return this._request(`/${id}/`, {
-            method: 'DELETE'
-        });
-    }
-}
-
-// Вспомогательные функции
 const Utils = {
     escapeHtml(unsafe) {
         if (unsafe == null) return '';
@@ -141,7 +82,7 @@ const Utils = {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 12px 20px; /* В старой версии 15px 20px */ 
+            padding: 12px 20px;
             border-radius: 8px;
             color: white;
             font-weight: 600;
@@ -210,7 +151,55 @@ const Utils = {
     }
 };
 
-// Основные функции приложения
+class ProductAPI {
+    static async _request(endpoint, options = {}) {
+        const response = await fetch(`${API_PRODUCTS_URL}${endpoint}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({
+                message: `HTTP error! status: ${response.status}`
+            }));
+            throw new Error(errorData.message || 'Unknown error');
+        }
+
+        return response.json();
+    }
+
+    static async getAll() {
+        return this._request('/');
+    }
+
+    static async get(id) {
+        return this._request(`/${id}/`);
+    }
+
+    static async create(productData) {
+        return this._request('/', {
+            method: 'POST',
+            body: JSON.stringify(productData)
+        });
+    }
+
+    static async update(id, productData) {
+        return this._request(`/${id}/`, {
+            method: 'PUT',
+            body: JSON.stringify(productData)
+        });
+    }
+
+    static async delete(id) {
+        return this._request(`/${id}/`, {
+            method: 'DELETE'
+        });
+    }
+}
+
 class ProductManager {
     static async loadProducts() {
         try {
@@ -285,7 +274,6 @@ class ProductManager {
             threshold_days: Number(formData.get('threshold_days')) || 7
         };
 
-        // Валидация
         const errors = this.validateProduct(productData);
         if (errors.length) {
             errors.forEach(error => Utils.showNotification(error, 'error'));
@@ -335,7 +323,6 @@ class ProductManager {
     }
 }
 
-// Функции для работы с формой
 class FormManager {
     static init() {
         this.initDatePicker();
@@ -369,7 +356,6 @@ class FormManager {
             if (e.key === 'Escape') this.closeFormPanel();
         });
 
-        // Привязка события изменения типа продукта
         const typeSelect = document.getElementById('type');
         if (typeSelect) {
             typeSelect.addEventListener('change', () => {
@@ -459,21 +445,18 @@ class FormManager {
         if (datePicker) datePicker.clear();
         this.updateExpiryHint();
 
-        // Сброс подсветки кнопок
         document.querySelectorAll('.quick-days-btn, .threshold-btn').forEach(btn => {
             btn.classList.remove('active');
         });
     }
 }
 
-// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     ProductManager.loadProducts();
     FormManager.init();
     FormManager.updateExpiryHint();
 });
 
-// Экспорт функций для глобального использования
 window.ProductManager = ProductManager;
 window.FormManager = FormManager;
 window.openFormPanel = FormManager.openFormPanel.bind(FormManager);
@@ -483,7 +466,6 @@ window.setDefaultExpiry = FormManager.setDefaultExpiry.bind(FormManager);
 window.setDays = (days) => {
     FormManager.setExpiryDays(days);
 
-    // Подсветка кнопки
     document.querySelectorAll('.quick-days-btn').forEach(btn => {
         btn.classList.remove('active');
     });
