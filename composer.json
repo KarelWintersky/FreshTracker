@@ -15,7 +15,26 @@
         }
     },
     "require": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*",
         "ext-pdo": "*",
-        "karelwintersky/arris.router": "^2.2"
+        "psr/log": "*",
+        "karelwintersky/arris": "^2.103",
+        "karelwintersky/arris.logger": "^2",
+        "karelwintersky/arris.database": "^2",
+        "karelwintersky/arris.entity.path": "^1.0",
+        "karelwintersky/arris.router": "^2.2",
+        "symfony/yaml": "^7.4"
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://satisfactory.click",
+            "canonical": false
+        }
+    ],
+    "config": {
+        "secure-http": true
     }
 }
