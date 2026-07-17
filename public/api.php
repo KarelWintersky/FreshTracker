@@ -2,10 +2,10 @@
 
 use Arris\AppRouter;
 use FreshTracker\App;
-use FreshTracker\Config;
 use FreshTracker\Products;
 use FreshTracker\Response;
 
+if (!defined("PATH_INSTALL")) { define("PATH_INSTALL", dirname(__DIR__)); }
 if (!defined("CONFIG_PATH")) { define("CONFIG_PATH", $_SERVER['APP_CONFIG'] ?? __DIR__ . '/../freshtracker.yml' ); };
 if (!defined("DATABASE_PATH")) { define("DATABASE_PATH", $_SERVER['APP_DATABASE'] ?? __DIR__ . '/../freshtracker.sqlite' ); };
 
@@ -18,7 +18,7 @@ if (is_file(PHAR_PATH)) {
     require_once __DIR__ . '/../vendor/autoload.php';
 }
 
-$config = [
+/*$config = [
     'database'  => [
         'path'      => DATABASE_PATH,
         'options'   => [
@@ -36,9 +36,9 @@ $config = [
         'max_threshold_days' => 365,
         'min_weight' => 0.001
     ]
-];
+];*/
 
-App::init($config);
+App::init([]);
 
 try {
     AppRouter::init(

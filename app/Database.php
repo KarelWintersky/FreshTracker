@@ -7,7 +7,7 @@ use PDOException;
 
 class Database
 {
-    private array $config;
+    public array $config = [];
 
     public \PDO $pdo;
 
@@ -21,7 +21,7 @@ class Database
      */
     public function initializeDatabase()
     {
-        $dbConfig = $this->config['database'];
+        $dbConfig = App::fromConfig('database');
         $this->pdo = new PDO('sqlite:' . $dbConfig['path'], options: $dbConfig['options']);
         $this->createTables();
     }

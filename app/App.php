@@ -2,16 +2,24 @@
 
 namespace FreshTracker;
 
+use Arris\Database\Connector;
 use PDO;
 
-class App
+class App extends \Arris\App
 {
     public static PDO $pdo;
-    public static array $config;
+    public static array $config = [];
+
+    protected function getDefaultConfig(): array
+    {
+        return AppConfig::getDefaultConfig();
+    }
 
     public static function init($config = []): void
     {
-        App::$config = \FreshTracker\Config::mergeWithDefaults($config);
+        App::factory([
+            "?" . dirname(__DIR__) . '/freshtracker.yml'
+        ]);
 
         $db = new Database($config);
         $db->initializeDatabase();

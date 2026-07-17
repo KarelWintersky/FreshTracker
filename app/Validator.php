@@ -9,7 +9,7 @@ class Validator
     public static function validateProductData(array $data, bool $isUpdate = false): array
     {
         $errors = [];
-        $validation = App::$config['validation'];
+        $validation = App::fromConfig('validation');
 
         if (!$isUpdate || isset($data['name'])) {
             $name = $data['name'] ?? '';
