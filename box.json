@@ -1,44 +1,61 @@
 {
+    "chmod": "0755",
+    "compactors": [
+        "KevinGH\\Box\\Compactor\\Php",
+        "KevinGH\\Box\\Compactor\\Json"
+    ],
+    "compression": "GZ",
     "main": "vendor/autoload.php",
     "output": "freshtracker.phar",
     "force-autodiscovery": true,
-    "directories": ["vendor", "app"],
 
     "stub": false,
-    "compression": "GZ",
 
     "check-requirements": false,
 
-    "blacklist": [
-        "README.md",
-        "CHANGELOG.md",
-        "LICENSE",
-        "config",
-        "icons",
-        ".box"
-    ],
     "finder": [
         {
-            "notName": "/LICENSE|.*\\.md|.*\\.dist|Makefile|composer\\.json|composer\\.lock/",
-            "exclude": [
-                "doc",
-                "test",
-                "tests",
-                "vendor-bin",
-                ".gitignore",
-                ".coveralls.yml",
-                ".php_cs.dist",
-                ".travis.yml",
-                "composer.lock",
-                "config.example.php",
-                "phpstan.neon",
-                "phpunit.xml"
-            ],
-            "in": "vendor"
+            "name": "*.php",
+            "in": ["app"]
         },
         {
-            "name": "composer.json",
-            "in": "."
+            "name": "*.yml",
+            "in": ["."]
+        },
+        {
+            "name": "*.css",
+            "in": ["public/assets"]
+        },
+        {
+            "name": "*.js",
+            "in": ["public/assets"]
+        },
+        {
+            "name": ["*.php", "*.json", "*.h", "*.so", "*.dll"],
+            "in": "vendor",
+            "exclude": [
+                ".github",
+                ".editorconfig",
+                "infection.json.dist",
+                ".php-cs-fixer.dist.php",
+                ".valgrindc",
+                "*.exe",
+                "*.md",
+                "LICENSE",
+                "psalm.xml",
+                "test",
+                "tests",
+                "Tests",
+                "examples",
+                ".gitignore",
+                ".hhconfig",
+                ".travis*",
+                "phpunit*",
+                "docs",
+                "doc"
+            ]
         }
-    ]
+    ],
+    "files": ["public/_version"],
+    "dump-autoload": true
 }
