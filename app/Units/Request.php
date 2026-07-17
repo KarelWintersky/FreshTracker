@@ -1,6 +1,8 @@
 <?php
 
-namespace FreshTracker;
+namespace FreshTracker\Units;
+
+use FreshTracker\Controllers\ResponseController;
 
 class Request
 {
@@ -15,7 +17,7 @@ class Request
         $data = json_decode($input, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            Response::setError('Неверный формат JSON', 400);
+            ResponseController::setError('Неверный формат JSON', 400);
         }
 
         return $data ?? [];

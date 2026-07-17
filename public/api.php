@@ -2,8 +2,9 @@
 
 use Arris\AppRouter;
 use FreshTracker\App;
-use FreshTracker\Products;
-use FreshTracker\Response;
+use FreshTracker\Controllers\ConfigController;
+use FreshTracker\Controllers\ProductsController;
+use FreshTracker\Controllers\ResponseController;
 
 if (!defined("PATH_INSTALL")) { define("PATH_INSTALL", dirname(__DIR__)); }
 if (!defined("CONFIG_PATH")) { define("CONFIG_PATH", $_SERVER['APP_CONFIG'] ?? __DIR__ . '/../freshtracker.yml' ); };
@@ -18,26 +19,6 @@ if (is_file(PHAR_PATH)) {
     require_once __DIR__ . '/../vendor/autoload.php';
 }
 
-/*$config = [
-    'database'  => [
-        'path'      => DATABASE_PATH,
-        'options'   => [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false
-        ]
-    ],
-    'defaults' => [
-        'threshold_days'    => 7,
-        'type'              => 'разное'
-    ],
-    'validation' => [
-        'max_weight' => 1000,
-        'max_threshold_days' => 365,
-        'min_weight' => 0.001
-    ]
-];*/
-
 App::init([]);
 
 try {
@@ -46,28 +27,31 @@ try {
         allowEmptyHandlers: true,
     );
 
-    AppRouter::addHandler(Products::class, new Products());
+    AppRouter::addHandler(ProductsController::class, new ProductsController());
+    AppRouter::addHandler(ConfigController::class, new ConfigController());
 
     AppRouter::group(prefix: '/api', callback: function () {
 
+        AppRouter::get('/config/', [ ConfigController::class, 'get']);
+
         AppRouter::group(prefix: '/products', callback: function () {
 
-            AppRouter::get('/', [ Products::class, 'getProducts']);
-            AppRouter::get('/{id}/', [ Products::class, 'getProduct']);
+            AppRouter::get('/', [ ProductsController::class, 'getProducts']);
+            AppRouter::get('/{id}/', [ ProductsController::class, 'getProduct']);
 
-            AppRouter::post('/', [ Products::class, 'createProduct']);
+            AppRouter::post('/', [ ProductsController::class, 'createProduct']);
 
-            AppRouter::put('/{id}/', [ Products::class, 'updateProduct']);
-            AppRouter::delete('/{id}/', [ Products::class, 'deleteProduct']);
+            AppRouter::put('/{id}/', [ ProductsController::class, 'updateProduct']);
+            AppRouter::delete('/{id}/', [ ProductsController::class, 'deleteProduct']);
 
-            AppRouter::options('/', [ Response::class, 'sendCORS']);
+            AppRouter::options('/', [ ResponseController::class, 'sendCORS']);
         });
     });
 
     AppRouter::dispatch();
 
 } catch (Throwable $e) {
-    Response::setError($e->getMessage(), $e->getCode());
+    ResponseController::setError($e->getMessage(), $e->getCode());
 } finally {
-    Response::send();
+    ResponseController::send();
 }

@@ -1,0 +1,51 @@
+/* ============================================================
+   Theme: light — Apple / Linear
+   ============================================================ */
+[data-theme="light"] {
+    --bg-body: #f5f5f7;
+    --bg-surface: #ffffff;
+    --bg-surface-hover: #fafafa;
+    --bg-header: #1d1d1f;
+    --bg-header-text: #f5f5f7;
+    --bg-table-header: #f5f5f7;
+    --bg-table-header-text: #86868b;
+    --bg-overlay: rgba(0, 0, 0, 0.35);
+    --bg-input: #ffffff;
+
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-muted: #aeaeb2;
+
+    --border-color: #e5e5ea;
+    --border-input: #d1d1d6;
+    --border-focus: #0071e3;
+
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --danger: #ff3b30;
+    --danger-hover: #d63029;
+    --success: #34c759;
+    --warning: #ff9f0a;
+
+    --status-ok-bg: rgba(52, 199, 89, 0.08);
+    --status-warn-bg: rgba(255, 159, 10, 0.08);
+    --status-exp-bg: rgba(255, 59, 48, 0.08);
+
+    --chip-bg: #e8e8ed;
+    --chip-hover: #d2d2d7;
+    --chip-text: #1d1d1f;
+    --chip-active-bg: #0071e3;
+    --chip-active-text: #ffffff;
+
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+    --shadow-panel: 0 24px 80px rgba(0,0,0,0.18);
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'SF Mono', 'Menlo', 'Consolas', monospace;
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus {
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+}

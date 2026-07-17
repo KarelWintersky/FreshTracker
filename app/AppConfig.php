@@ -29,7 +29,8 @@ class AppConfig
                 'max_weight' => 1000,
                 'max_threshold_days' => 365,
                 'min_weight' => 0.001
-            ]
+            ],
+            'theme' => 'warm'
         ];
     }
 

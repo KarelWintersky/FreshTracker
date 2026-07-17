@@ -1,0 +1,104 @@
+/* ============================================================
+   Theme: warm — Kitchen / Cozy
+   ============================================================ */
+[data-theme="warm"] {
+    --bg-body: #f7f0e8;
+    --bg-surface: #fffdf9;
+    --bg-surface-hover: #f5ede3;
+    --bg-header: #4a3228;
+    --bg-header-text: #faf5ef;
+    --bg-table-header: #f0e6d8;
+    --bg-table-header-text: #7a6555;
+    --bg-overlay: rgba(74, 50, 40, 0.3);
+    --bg-input: #fffdf9;
+
+    --text-primary: #3d2b1f;
+    --text-secondary: #7a6555;
+    --text-muted: #b8a89a;
+
+    --border-color: #e0d4c6;
+    --border-input: #cfc0ae;
+    --border-focus: #c75c2e;
+
+    --accent: #c75c2e;
+    --accent-hover: #b04e22;
+    --danger: #b83a2a;
+    --danger-hover: #9c2f20;
+    --success: #6b8e4e;
+    --warning: #d4922a;
+
+    --status-ok-bg: rgba(107, 142, 78, 0.08);
+    --status-warn-bg: rgba(212, 146, 42, 0.08);
+    --status-exp-bg: rgba(184, 58, 42, 0.08);
+
+    --chip-bg: #e8ddd0;
+    --chip-hover: #d8c9b8;
+    --chip-text: #4a3228;
+    --chip-active-bg: #c75c2e;
+    --chip-active-text: #ffffff;
+
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 2px 8px rgba(74, 50, 40, 0.05), 0 8px 24px rgba(74, 50, 40, 0.08);
+    --shadow-panel: 0 20px 60px rgba(74, 50, 40, 0.15);
+    --font: 'Nunito', 'Noto Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'Nunito', 'Consolas', monospace;
+}
+
+[data-theme="warm"] .header {
+    background: #4a3228;
+    border-bottom: 1px solid #e0d4c6;
+}
+
+[data-theme="warm"] .header h1 {
+    font-weight: 700;
+}
+
+[data-theme="warm"] .product-item.header {
+    background: #f0e6d8;
+    color: #7a6555;
+    border-radius: var(--radius-sm);
+}
+
+[data-theme="warm"] .product-item {
+    border-bottom: 1px solid #e0d4c6;
+}
+
+[data-theme="warm"] .product-item.expired {
+    background: rgba(184, 58, 42, 0.06);
+    border-left: 3px solid #b83a2a;
+}
+
+[data-theme="warm"] .product-item.warning {
+    background: rgba(212, 146, 42, 0.06);
+    border-left: 3px solid #d4922a;
+}
+
+[data-theme="warm"] .delete-btn {
+    background: transparent;
+    color: #b83a2a;
+    border: 1px solid #b83a2a;
+}
+
+[data-theme="warm"] .delete-btn:hover {
+    background: #b83a2a;
+    color: #fff;
+}
+
+[data-theme="warm"] .form-panel {
+    background: #fffdf9;
+    border: 1px solid #e0d4c6;
+}
+
+[data-theme="warm"] .close-panel:hover {
+    color: #b83a2a;
+}
+
+[data-theme="warm"] .default-expiry-hint {
+    color: #6b8e4e;
+}
+
+[data-theme="warm"] input:focus,
+[data-theme="warm"] select:focus {
+    box-shadow: 0 0 0 3px rgba(199, 92, 46, 0.1);
+}

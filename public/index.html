@@ -1,26 +1,30 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="version" content="VERSION_PLACEHOLDER">
-    <title>FreshTracker - Учет продуктов</title>
+    <title>FreshTracker</title>
     <link rel="stylesheet" href="assets/flatpickr.min.css">
     <link rel="stylesheet" href="assets/styles.css">
+    <link rel="stylesheet" href="assets/theme.light.css">
+    <link rel="stylesheet" href="assets/theme.dark.css">
+    <link rel="stylesheet" href="assets/theme.minimal.css">
+    <link rel="stylesheet" href="assets/theme.warm.css">
 </head>
 <body>
 <div class="overlay" id="overlay"></div>
 
 <div class="container" id="mainApp">
     <div class="header">
-        <h1>🍎 FreshTracker</h1>
+        <h1>FreshTracker</h1>
         <p>Учет продуктов и контроль сроков годности</p>
     </div>
 
     <div class="main-content">
         <div class="section-header">
             <h2 class="section-title">Список продуктов</h2>
-            <button class="add-product-btn" onclick="openFormPanel()">➕ Добавить продукт</button>
+            <button class="add-product-btn" onclick="openFormPanel()">Добавить продукт</button>
         </div>
 
         <div class="product-item header">
@@ -29,12 +33,12 @@
             <div>Тип</div>
             <div>Срок годности</div>
             <div>Статус</div>
-            <div>Действие</div>
+            <div></div>
         </div>
 
         <div id="productsList" class="products-list">
             <div class="empty-state">
-                <i>⏳</i>
+                <i>&hellip;</i>
                 <p>Загрузка...</p>
             </div>
         </div>
@@ -42,17 +46,17 @@
 </div>
 
 <div class="form-panel" id="formPanel">
-    <button class="close-panel" onclick="closeFormPanel()">×</button>
+    <button class="close-panel" onclick="closeFormPanel()">&times;</button>
     <h3 class="panel-title">Добавить продукт</h3>
 
     <form id="productForm">
         <div class="form-group">
-            <label for="name">Наименование продукта</label>
-            <input type="text" id="name" name="name" required placeholder="Например: Гречневая крупа">
+            <label for="name">Наименование</label>
+            <input type="text" id="name" name="name" required placeholder="Напр. Гречневая крупа">
         </div>
 
         <div class="form-group">
-            <label for="type">Тип продукта</label>
+            <label for="type">Тип</label>
             <select id="type" name="type" required onchange="updateDefaultsByType()">
                 <option value="разное" selected>Разное</option>
                 <option value="крупы">Крупы</option>
@@ -69,42 +73,41 @@
         <div class="form-group">
             <label for="weight">Вес</label>
             <div class="input-with-prefix">
-                <span class="input-prefix">⚖️</span>
+                <span class="input-prefix">кг</span>
                 <input type="number" id="weight" name="weight" step="0.001" required placeholder="0.5">
             </div>
         </div>
 
         <div class="form-group">
             <label for="expiry_date">Срок годности</label>
-            <input type="text" id="expiry_date" name="expiry_date" required
-                   placeholder="Выберите дату или используйте кнопки ниже">
+            <input type="text" id="expiry_date" name="expiry_date" required placeholder="Выберите дату">
 
             <div class="quick-days-buttons">
-                <button type="button" class="quick-days-btn" onclick="setDays(3)">+3 дн</button>
-                <button type="button" class="quick-days-btn" onclick="setDays(7)">+7 дн</button>
-                <button type="button" class="quick-days-btn" onclick="setDays(14)">+14 дн</button>
-                <button type="button" class="quick-days-btn" onclick="setDays(30)">+30 дн</button>
-                <button type="button" class="quick-days-btn" onclick="setDays(60)">+60 дн</button>
-                <button type="button" class="quick-days-btn" id="defaultExpiryBtn" onclick="setDefaultExpiry()" style="background: #28a745;">По умолч.</button>
+                <button type="button" class="quick-days-btn" onclick="setDays(3)">+3</button>
+                <button type="button" class="quick-days-btn" onclick="setDays(7)">+7</button>
+                <button type="button" class="quick-days-btn" onclick="setDays(14)">+14</button>
+                <button type="button" class="quick-days-btn" onclick="setDays(30)">+30</button>
+                <button type="button" class="quick-days-btn" onclick="setDays(60)">+60</button>
+                <button type="button" class="quick-days-btn" id="defaultExpiryBtn" onclick="setDefaultExpiry()">По умолч.</button>
             </div>
         </div>
 
         <div class="form-group">
             <label for="threshold_days">Порог предупреждения (дни)</label>
             <div class="input-with-prefix">
-                <span class="input-prefix">⏰</span>
+                <span class="input-prefix">дн</span>
                 <input type="number" id="threshold_days" name="threshold_days" value="7" min="1" max="365">
             </div>
 
             <div class="threshold-buttons">
-                <button type="button" class="threshold-btn" onclick="setThreshold(3)">3 дн</button>
-                <button type="button" class="threshold-btn" onclick="setThreshold(7)">7 дн</button>
-                <button type="button" class="threshold-btn" onclick="setThreshold(14)">14 дн</button>
-                <button type="button" class="threshold-btn" onclick="setThreshold(30)">30 дн</button>
+                <button type="button" class="threshold-btn" onclick="setThreshold(3)">3</button>
+                <button type="button" class="threshold-btn" onclick="setThreshold(7)">7</button>
+                <button type="button" class="threshold-btn" onclick="setThreshold(14)">14</button>
+                <button type="button" class="threshold-btn" onclick="setThreshold(30)">30</button>
             </div>
         </div>
 
-        <button type="submit" class="btn">➕ Добавить продукт</button>
+        <button type="submit" class="btn">Добавить продукт</button>
     </form>
 </div>
 

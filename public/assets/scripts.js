@@ -76,19 +76,24 @@ const Utils = {
 
     showNotification(message, type = 'error') {
         const notification = document.createElement('div');
-        const backgroundColor = type === 'success' ? '#28a745' : '#dc3545';
+        const styles = getComputedStyle(document.documentElement);
+        const backgroundColor = type === 'success'
+            ? styles.getPropertyValue('--color-success').trim()
+            : styles.getPropertyValue('--color-danger').trim();
 
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 12px 20px;
-            border-radius: 8px;
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
             color: white;
             font-weight: 600;
+            font-size: 0.85rem;
+            font-family: var(--font-body);
             z-index: 10000;
             transform: translateX(400px);
-            transition: transform 0.3s ease;
+            transition: transform 0.2s ease;
             background: ${backgroundColor};
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         `;
@@ -138,14 +143,14 @@ const Utils = {
         if (daysRemaining <= thresholdDays) {
             return {
                 class: 'warning',
-                text: `Скоро истекает <br>&nbsp;&nbsp;&nbsp;&nbsp; (осталось ${Math.ceil(daysRemaining)} дн.)`,
+                text: `Скоро (${Math.ceil(daysRemaining)} дн.)`,
                 icon: 'status-warning'
             };
         }
 
         return {
             class: '',
-            text: `ОК (${Math.ceil(daysRemaining)} дн.)`,
+            text: `${Math.ceil(daysRemaining)} дн.`,
             icon: 'status-ok'
         };
     }
@@ -209,7 +214,7 @@ class ProductManager {
         } catch (error) {
             console.error('Ошибка загрузки:', error);
             Utils.showNotification(`Ошибка загрузки: ${error.message}`, 'error');
-            this.showEmptyState('⚠️', 'Ошибка загрузки данных', true);
+            this.showEmptyState('!', 'Ошибка загрузки данных', true);
         }
     }
 
@@ -217,7 +222,7 @@ class ProductManager {
         const container = document.getElementById('productsList');
 
         if (!products?.length) {
-            return this.showEmptyState('📦', 'Нет добавленных продуктов');
+            return this.showEmptyState('—', 'Нет добавленных продуктов');
         }
 
         container.innerHTML = products.map(product => this.createProductElement(product)).join('');
@@ -237,7 +242,7 @@ class ProductManager {
                 </div>
                 <div data-label="Действие">
                     <button class="delete-btn" onclick="ProductManager.deleteProduct(${product.id})">
-                        🗑️ Удалить
+                        Удалить
                     </button>
                 </div>
             </div>
@@ -247,14 +252,14 @@ class ProductManager {
     static showEmptyState(icon, message, showRetry = false) {
         const container = document.getElementById('productsList');
         const retryButton = showRetry
-            ? '<button class="btn" onclick="ProductManager.loadProducts()" style="width: auto; margin-top: 20px;">Повторить попытку</button>'
+            ? '<button class="btn" onclick="ProductManager.loadProducts()" style="width: auto; margin-top: 20px;">Повторить</button>'
             : '';
 
         container.innerHTML = `
             <div class="empty-state">
                 <i>${icon}</i>
                 <p>${message}</p>
-                ${!showRetry ? '<button class="btn" onclick="FormManager.openFormPanel()" style="width: auto; margin-top: 20px;">Добавить первый продукт</button>' : ''}
+                ${!showRetry ? '<button class="btn" onclick="FormManager.openFormPanel()" style="width: auto; margin-top: 20px;">Добавить продукт</button>' : ''}
                 ${retryButton}
             </div>
         `;
@@ -451,11 +456,24 @@ class FormManager {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadTheme();
     ProductManager.loadProducts();
     FormManager.init();
     FormManager.updateExpiryHint();
 });
+
+async function loadTheme() {
+    try {
+        const res = await fetch('/api/config/');
+        const config = await res.json();
+        if (config.theme) {
+            document.documentElement.setAttribute('data-theme', config.theme);
+        }
+    } catch (e) {
+        console.warn('Failed to load theme config:', e);
+    }
+}
 
 window.ProductManager = ProductManager;
 window.FormManager = FormManager;

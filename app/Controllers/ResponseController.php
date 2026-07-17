@@ -1,8 +1,8 @@
 <?php
 
-namespace FreshTracker;
+namespace FreshTracker\Controllers;
 
-class Response
+class ResponseController
 {
     public static string|array $data;
     public static int $code = 200;

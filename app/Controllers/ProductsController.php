@@ -1,11 +1,14 @@
 <?php
 
-namespace FreshTracker;
+namespace FreshTracker\Controllers;
 
+use FreshTracker\App;
+use FreshTracker\Units\Request;
+use FreshTracker\Units\Validator;
 use PDO;
 use PDOException;
 
-class Products
+class ProductsController
 {
     private PDO $db;
     private array $config;
@@ -50,7 +53,7 @@ class Products
                 return $this->formatProduct($product);
             }, $products);
 
-            Response::set($products);
+            ResponseController::set($products);
 
         } catch (PDOException $e) {
             throw new \RuntimeException('Ошибка загрузки продуктов: ' . $e->getMessage(), 500);
@@ -73,11 +76,11 @@ class Products
             $product = $stmt->fetch();
 
             if (!$product) {
-                Response::setError('Продукт не найден', 404);
+                ResponseController::setError('Продукт не найден', 404);
                 return false;
             }
 
-            Response::set($this->formatProduct($product));
+            ResponseController::set($this->formatProduct($product));
         } catch (PDOException $e) {
             throw new \RuntimeException('Ошибка загрузки продукта: ' . $e->getMessage(), 500);
         }
@@ -91,13 +94,13 @@ class Products
 
         $validationErrors = Validator::validateProductData($data);
         if (!empty($validationErrors)) {
-            Response::setError('Ошибка валидации: ' . implode(', ', $validationErrors), 400);
+            ResponseController::setError('Ошибка валидации: ' . implode(', ', $validationErrors), 400);
             return false;
         }
 
         $expiry_date = Validator::processDateInput($data['expiry_date'] ?? '');
         if (!$expiry_date) {
-            Response::setError('Неверный формат даты', 400);
+            ResponseController::setError('Неверный формат даты', 400);
             return false;
         }
 
@@ -207,7 +210,7 @@ class Products
             $stmt->execute([':id' => $id]);
 
             if ($stmt->rowCount() > 0) {
-                Response::set(['message' => 'Продукт удален']);
+                ResponseController::set(['message' => 'Продукт удален']);
             } else {
                 throw new \RuntimeException('Продукт не найден', 404);
             }

@@ -1,8 +1,9 @@
 <?php
 
-namespace FreshTracker;
+namespace FreshTracker\Units;
 
 use DateTime;
+use FreshTracker\App;
 
 class Validator
 {
