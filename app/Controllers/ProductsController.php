@@ -3,20 +3,20 @@
 namespace FreshTracker\Controllers;
 
 use FreshTracker\App;
+use FreshTracker\AppDatabase;
 use FreshTracker\Units\Request;
 use FreshTracker\Units\Validator;
-use PDO;
 use PDOException;
 
 class ProductsController
 {
-    private PDO $db;
+    private AppDatabase $db;
     private array $config;
 
     public function __construct()
     {
         $this->config = App::$config;
-        $this->db = App::$pdo;
+        $this->db = App::$db;
     }
 
     private function formatProduct(array $product): array
@@ -39,15 +39,14 @@ class ProductsController
     public function getProducts(): bool
     {
         try {
-            $stmt = $this->db->query("
+            $daysExpr = $this->db->sqlDaysRemaining('expiry_date');
+            $products = $this->db->fetchAll("
                 SELECT *, 
-                       julianday(expiry_date) - julianday('now') as days_remaining
+                       {$daysExpr} as days_remaining
                 FROM products 
                 WHERE is_deleted = 0
                 ORDER BY expiry_date ASC
             ");
-
-            $products = $stmt->fetchAll();
 
             $products = array_map(function ($product) {
                 return $this->formatProduct($product);
@@ -65,15 +64,13 @@ class ProductsController
     public function getProduct(int $id):bool
     {
         try {
-            $stmt = $this->db->prepare("
+            $daysExpr = $this->db->sqlDaysRemaining('expiry_date');
+            $product = $this->db->fetchOne("
                 SELECT *, 
-                       julianday(expiry_date) - julianday('now') as days_remaining
+                       {$daysExpr} as days_remaining
                 FROM products 
-                WHERE id = :id AND is_deleted = 0
-            ");
-
-            $stmt->execute([':id' => $id]);
-            $product = $stmt->fetch();
+                WHERE id = ? AND is_deleted = 0
+            ", [$id]);
 
             if (!$product) {
                 ResponseController::setError('Продукт не найден', 404);
@@ -104,21 +101,18 @@ class ProductsController
             return false;
         }
 
-        $stmt = $this->db->prepare("
-            INSERT INTO products (name, weight, expiry_date, type, threshold_days) 
-            VALUES (:name, :weight, :expiry_date, :type, :threshold_days)
-        ");
-
         try {
-            $stmt->execute([
-                ':name' => $data['name'],
-                ':weight' => (float)$data['weight'],
-                ':expiry_date' => $expiry_date,
-                ':type' => $data['type'] ?? $this->config['defaults']['type'],
-                ':threshold_days' => (int)($data['threshold_days'] ?? $this->config['defaults']['threshold_days'])
+            $productId = $this->db->insert("
+                INSERT INTO products (name, weight, expiry_date, type, threshold_days) 
+                VALUES (?, ?, ?, ?, ?)
+            ", [
+                $data['name'],
+                (float)$data['weight'],
+                $expiry_date,
+                $data['type'] ?? $this->config['defaults']['type'],
+                (int)($data['threshold_days'] ?? $this->config['defaults']['threshold_days'])
             ]);
 
-            $productId = $this->db->lastInsertId();
             $this->getProduct((int)$productId);
         } catch (PDOException $e) {
             throw new \RuntimeException('Ошибка при создании продукта: ' . $e->getMessage(), 500);
@@ -130,11 +124,9 @@ class ProductsController
     {
         $data = Request::getInputData();
 
-        // Проверяем существование продукта
-        $checkStmt = $this->db->prepare("SELECT id FROM products WHERE id = :id AND is_deleted = 0");
-        $checkStmt->execute([':id' => $id]);
+        $product = $this->db->fetchOne("SELECT id FROM products WHERE id = ? AND is_deleted = 0", [$id]);
 
-        if (!$checkStmt->fetch()) {
+        if (!$product) {
             throw  new \RuntimeException('Продукт не найден', 404);
         }
 
@@ -143,18 +135,17 @@ class ProductsController
             throw new \RuntimeException('Ошибка валидации: ' . implode(', ', $validationErrors), 400);
         }
 
-        // Строим динамический UPDATE запрос
         $fields = [];
-        $params = [':id' => $id];
+        $params = [];
 
         if (isset($data['name'])) {
-            $fields[] = 'name = :name';
-            $params[':name'] = $data['name'];
+            $fields[] = 'name = ?';
+            $params[] = $data['name'];
         }
 
         if (isset($data['weight'])) {
-            $fields[] = 'weight = :weight';
-            $params[':weight'] = (float)$data['weight'];
+            $fields[] = 'weight = ?';
+            $params[] = (float)$data['weight'];
         }
 
         if (isset($data['expiry_date'])) {
@@ -162,34 +153,35 @@ class ProductsController
             if (!$expiry_date) {
                 throw new \RuntimeException('Неверный формат даты', 400);
             }
-            $fields[] = 'expiry_date = :expiry_date';
-            $params[':expiry_date'] = $expiry_date;
+            $fields[] = 'expiry_date = ?';
+            $params[] = $expiry_date;
         }
 
         if (isset($data['type'])) {
-            $fields[] = 'type = :type';
-            $params[':type'] = $data['type'];
+            $fields[] = 'type = ?';
+            $params[] = $data['type'];
         }
 
         if (isset($data['threshold_days'])) {
-            $fields[] = 'threshold_days = :threshold_days';
-            $params[':threshold_days'] = (int)$data['threshold_days'];
+            $fields[] = 'threshold_days = ?';
+            $params[] = (int)$data['threshold_days'];
         }
 
-        $fields[] = 'updated_at = CURRENT_TIMESTAMP';
+        $fields[] = 'updated_at = ' . $this->db->sqlNow();
 
         if (empty($fields)) {
             throw new \RuntimeException('Нет данных для обновления', 400);
         }
 
-        $stmt = $this->db->prepare("
-            UPDATE products 
-            SET " . implode(', ', $fields) . "
-            WHERE id = :id AND is_deleted = 0
-        ");
+        $params[] = $id;
 
         try {
-            $stmt->execute($params);
+            $this->db->execute("
+                UPDATE products 
+                SET " . implode(', ', $fields) . "
+                WHERE id = ? AND is_deleted = 0
+            ", $params);
+
             $this->getProduct($id);
         } catch (PDOException $e) {
             throw new \RuntimeException('Ошибка при обновлении продукта: ' . $e->getMessage(), 500);
@@ -200,16 +192,15 @@ class ProductsController
 
     public function deleteProduct(int $id): bool
     {
-        $stmt = $this->db->prepare("
-            UPDATE products 
-            SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
-            WHERE id = :id AND is_deleted = 0
-        ");
-
         try {
-            $stmt->execute([':id' => $id]);
+            $now = $this->db->sqlNow();
+            $affected = $this->db->execute("
+                UPDATE products 
+                SET is_deleted = 1, deleted_at = {$now}, updated_at = {$now}
+                WHERE id = ? AND is_deleted = 0
+            ", [$id]);
 
-            if ($stmt->rowCount() > 0) {
+            if ($affected > 0) {
                 ResponseController::set(['message' => 'Продукт удален']);
             } else {
                 throw new \RuntimeException('Продукт не найден', 404);

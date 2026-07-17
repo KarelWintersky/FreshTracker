@@ -2,8 +2,6 @@
 
 namespace FreshTracker;
 
-use PDO;
-
 class AppConfig
 {
     public static function getDefaultConfig(): array
@@ -14,12 +12,9 @@ class AppConfig
 
         return [
             'database' => [
-                'path'  => $path_database,
-                'options'   => [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false
-                ]
+                'driver'    => 'sqlite',
+                'host'      => $path_database,
+                'path'      => $path_database,
             ],
             'defaults' => [
                 'threshold_days' => 7,
@@ -30,6 +25,7 @@ class AppConfig
                 'max_threshold_days' => 365,
                 'min_weight' => 0.001
             ],
+            // light | dark | minimal | warm
             'theme' => 'warm'
         ];
     }
