@@ -19,10 +19,6 @@
             "in": ["app"]
         },
         {
-            "name": "*.yml",
-            "in": ["."]
-        },
-        {
             "name": "*.css",
             "in": ["public/assets"]
         },
