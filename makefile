@@ -37,10 +37,7 @@ update:		##@build Update project from GIT
 	git pull --no-rebase
 
 phar:	##@build Compile PHAR file
-	@box compile --config=box.json
-
-pharlist:	##@build List of PHAR file
-	@box info --list homestead.phar
+	@bash build.sh
 
 help:
 	@perl -e '$(HELP_ACTION)' $(MAKEFILE_LIST)

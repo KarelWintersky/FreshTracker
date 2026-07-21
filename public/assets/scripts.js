@@ -45,6 +45,7 @@ const PRODUCT_TYPES = {
 };
 
 let datePicker;
+let currentAccessLevel = 'admin';
 
 const Utils = {
     escapeHtml(unsafe) {
@@ -226,6 +227,7 @@ class ProductManager {
         }
 
         container.innerHTML = products.map(product => this.createProductElement(product)).join('');
+        applyAccessLevel(currentAccessLevel);
     }
 
     static createProductElement(product) {
@@ -254,12 +256,15 @@ class ProductManager {
         const retryButton = showRetry
             ? '<button class="btn" onclick="ProductManager.loadProducts()" style="width: auto; margin-top: 20px;">Повторить</button>'
             : '';
+        const addBtn = currentAccessLevel === 'admin'
+            ? '<button class="btn" onclick="FormManager.openFormPanel()" style="width: auto; margin-top: 20px;">Добавить продукт</button>'
+            : '';
 
         container.innerHTML = `
             <div class="empty-state">
                 <i>${icon}</i>
                 <p>${message}</p>
-                ${!showRetry ? '<button class="btn" onclick="FormManager.openFormPanel()" style="width: auto; margin-top: 20px;">Добавить продукт</button>' : ''}
+                ${!showRetry ? addBtn : ''}
                 ${retryButton}
             </div>
         `;
@@ -470,9 +475,27 @@ async function loadTheme() {
         if (config.theme) {
             document.documentElement.setAttribute('data-theme', config.theme);
         }
+        if (config.access_level) {
+            currentAccessLevel = config.access_level;
+            applyAccessLevel(config.access_level);
+        }
     } catch (e) {
         console.warn('Failed to load theme config:', e);
     }
+}
+
+function applyAccessLevel(level) {
+    if (level === 'admin') return;
+
+    const addBtn = document.querySelector('.add-product-btn');
+    if (addBtn) addBtn.style.display = 'none';
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.style.display = 'none';
+    });
+
+    const headerCell = document.querySelector('.product-item.header > div:last-child');
+    if (headerCell) headerCell.style.display = 'none';
 }
 
 window.ProductManager = ProductManager;

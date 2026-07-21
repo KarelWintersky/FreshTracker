@@ -26,7 +26,15 @@ class AppConfig
                 'min_weight' => 0.001
             ],
             // light | dark | minimal | warm
-            'theme' => 'warm'
+            'theme' => 'warm',
+            'access'    =>  [
+                'admin'     =>  [
+                    '127.0.0.1'
+                ],
+                'view'      =>  [
+                    '0.0.0.0/0'
+                ]
+            ],
         ];
     }
 

@@ -5,6 +5,7 @@ use FreshTracker\App;
 use FreshTracker\Controllers\ConfigController;
 use FreshTracker\Controllers\ProductsController;
 use FreshTracker\Controllers\ResponseController;
+use FreshTracker\Units\AccessControl;
 
 if (!defined("PATH_INSTALL")) { define("PATH_INSTALL", dirname(__DIR__)); }
 if (!defined("CONFIG_PATH")) { define("CONFIG_PATH", $_SERVER['APP_CONFIG'] ?? __DIR__ . '/../freshtracker.yml' ); };
@@ -20,6 +21,29 @@ if (is_file(PHAR_PATH)) {
 }
 
 App::init([]);
+
+function json_error(string $message, int $code = 400): never {
+    http_response_code($code);
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => $message]);
+    exit;
+}
+
+$clientIP = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+$accessLevel = AccessControl::getAccessLevel(
+    $clientIP,
+    App::config('access.admin') ?? ['127.0.0.1', '::1'],
+    App::config('access.view') ?? ['0.0.0.0/0', '::/0'],
+);
+App::setAccessLevel($accessLevel);
+
+if ($accessLevel === 'none') {
+    json_error('Access denied', 403);
+}
+
+if ($accessLevel === 'view' && in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'], true)) {
+    json_error('Read-only access', 403);
+}
 
 try {
     AppRouter::init(

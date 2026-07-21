@@ -7,6 +7,11 @@ class App extends \Arris\App
     public static AppDatabase $db;
     public static array $config = [];
 
+    private static string $accessLevel = 'admin';
+
+    public static function setAccessLevel(string $level): void { self::$accessLevel = $level; }
+    public static function getAccessLevel(): string { return self::$accessLevel; }
+
     protected function getDefaultConfig(): array
     {
         return AppConfig::getDefaultConfig();

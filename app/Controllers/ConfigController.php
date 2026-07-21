@@ -9,7 +9,8 @@ class ConfigController
     public static function get(): void
     {
         ResponseController::set([
-            'theme' => App::config('theme', null, 'light'),
+            'theme'         => App::config('theme', null, 'light'),
+            'access_level'  => App::getAccessLevel(),
         ]);
     }
 }
