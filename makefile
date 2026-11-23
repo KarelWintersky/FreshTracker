@@ -1,5 +1,5 @@
 #!/usr/bin/make
-.PHONY: help install update build phar phar-local test test-legacy serve dchv dchr dchn
+.PHONY: help install update build phar phar-local test test-legacy serve secret dchv dchr dchn
 
 PACKAGE_NAME = freshtracker
 PROJECT = freshtracker
@@ -39,6 +39,9 @@ test-legacy:	##@development Run the dependency-free legacy test runner
 
 serve:		##@development Run the development server on 127.0.0.1:8080
 	@php -S 127.0.0.1:8080 -t public public/router.php
+
+secret:		##@development Generate an HMAC secret for security.secret
+	@php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
 
 phar:		##@build Build production PHAR via Docker + Box (build.sh)
 	@bash build.sh

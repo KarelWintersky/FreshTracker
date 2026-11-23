@@ -39,6 +39,7 @@ access:
 
 security:
   # HMAC key for the edit-session cookie. Empty — generated once in var/secret.
+  # Generate a value with: make secret
   secret: ''
   # Only trust X-Forwarded-For when the request comes from one of these proxies.
   trusted_proxies: []

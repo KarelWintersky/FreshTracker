@@ -68,7 +68,8 @@ build-phar-local.php           dependency-free PHAR builder (make phar-local)
 Config priority: `APP_CONFIG` (must exist) → `freshtracker.yaml` in the project
 root → `Config\Defaults`. `APP_DATABASE` overrides the SQLite path and
 `APP_SECRET` overrides the cookie secret. `config.yaml` and `freshtracker.yml`
-are no longer read.
+are no longer read. `make secret` prints a 64-char hex HMAC secret; empty
+`security.secret` makes the app generate `var/secret` (0600).
 
 Sections: `app` (theme, timezone, debug), `database` (driver/path/slow query),
 `access.local` (networks, visible, password), `access.public` (visible, password,
@@ -214,3 +215,4 @@ port is planned in `TODO_GOLANG.md`.
 - 0.4.15 — web PHAR restored (`box.json`, `make phar`, `api.php` fallback
   to `freshtracker.phar` when `vendor/` is absent).
 - 0.4.16 — local PHAR builder moved to `build-phar-local.php` (root); paths updated.
+- 0.4.17 — `make secret` generates and prints an HMAC secret for `security.secret`.
