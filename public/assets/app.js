@@ -273,7 +273,8 @@
         const match = /^(\d{4})-(\d{2})$/.exec(String(value || ''));
         if (!match) return '—';
         const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
-        return date.toLocaleDateString('ru-RU', { month: 'short', year: 'numeric' });
+        const month = date.toLocaleDateString('ru-RU', { month: 'short' });
+        return `${month} ${date.getFullYear()}`;
     }
 
     function historyItemHtml(product) {

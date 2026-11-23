@@ -305,7 +305,7 @@ svg { display: block; }
 .item__status {
     grid-area: status;
     align-self: center;
-    transform: translateY(2px);
+    transform: translateY(3px);
     padding: 3px 9px;
     border-radius: 999px;
     font-size: 0.76rem;
@@ -549,7 +549,8 @@ svg { display: block; }
 .stat__sub { font-size: 0.74rem; color: var(--color-muted); }
 
 .months { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-.month { display: grid; grid-template-columns: 74px 1fr 54px; align-items: center; gap: 10px; font-size: 0.8rem; }
+.month { display: grid; grid-template-columns: max-content minmax(60px, 1fr) max-content; align-items: center; gap: 10px; font-size: 0.8rem; }
+.month > span { white-space: nowrap; }
 .month__bar { height: 8px; border-radius: 999px; background: var(--color-surface-2); overflow: hidden; }
 .month__fill { height: 100%; border-radius: 999px; background: var(--color-danger); opacity: 0.8; }
 
