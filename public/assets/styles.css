@@ -632,6 +632,22 @@ svg { display: block; }
 
     .item__actions { justify-content: flex-end; }
 
+    .fab {
+        right: auto;
+        left: 50%;
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%);
+        box-shadow: 0 10px 30px rgba(9, 105, 218, 0.38);
+    }
+
+    .fab:hover {
+        transform: translate(-50%, -2px);
+    }
+
+    .toasts {
+        bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+    }
+
     .sheet { align-items: center; padding: 24px; }
     .sheet__panel {
         max-width: 560px;
