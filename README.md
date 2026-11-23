@@ -1,200 +1,157 @@
 # FreshTracker 🍎
 
-**Система учета продуктов питания с контролем сроков годности**
+Домашний учёт продуктов с контролем сроков годности: что лежит в запасе, что
+скоро истекает, что использовано, а что пришлось выбросить.
 
-![FreshTracker](https://img.shields.io/badge/Version-1.0.0-green)
-![PHP](https://img.shields.io/badge/PHP-8.0+-blue)
-![SQLite](https://img.shields.io/badge/Database-SQLite-lightgrey)
+Приложение рассчитано на одну семью (1–4 человека) и один общий «холодильник».
+Пользовательских аккаунтов нет: доступ определяется сетью и, при необходимости,
+паролем на редактирование.
 
-Производство - deepseek. Нет, мне не стыдно делать микроутилиту для личных нужд нейросетью.
+## Стек
 
-## 📋 О проекте
+- PHP 8.2+, SQLite, `symfony/yaml`
+- Arris-пакеты: `arris.config`, `arris.router`, `arris.logger`, `arris.database`,
+  `arris.request`, `arris.toolkit.firewall`, `arris.toolkit.cli-console`
+- Frontend: vanilla JS, CSS custom properties, без сборки
 
-FreshTracker - это простое и удобное веб-приложение для учета продуктов питания с автоматическим контролем сроков годности. Приложение помогает следить за запасами на кухне и вовремя использовать продукты до истечения их срока годности.
+## Быстрый старт
 
-## ✨ Возможности
-
-- ✅ **Добавление продуктов** с указанием типа, веса и срока годности
-- 🗑️ **Удаление продуктов** из базы данных
-- 🎨 **Цветовая индикация** статусов:
-    - 🔴 Красный - просроченные продукты
-    - 🟡 Желтый - скоро истекает (в пределах порога)
-    - 🟢 Зеленый - нормальный срок
-- ⏰ **Умные сроки годности** - автоматические настройки по типам продуктов
-- 📱 **Адаптивный интерфейс** - работает на любых устройствах
-- 🔒 **Защита данных** - запрет прямого доступа к базе данных
-
-## 🚀 Быстрый старт
-
-### Требования
-
-- PHP 8.0 или выше
-- SQLite3
-- Веб-сервер (Apache/Nginx) с поддержкой PHP
-- Браузер с поддержкой JavaScript
-
-### Установка
-
-1. **Скачайте файлы проекта** в папку веб-сервера:
 ```bash
-cd /var/www/html/
-git clone <repository-url> freshtracker
+composer install
+cp config.dist.yaml config.yaml
+# отредактируйте config.yaml: путь к БД, сети, пароли
+php bin/ft migrate
+php -S 127.0.0.1:8080 -t public public/router.php
 ```
 
-2. **Настройте права доступа:**
-```bash
-chmod 755 freshtracker/
-chmod 644 freshtracker.sqlite
-```
+Откройте `http://127.0.0.1:8080/`.
 
-3. **Настройте веб-сервер** (пример для Nginx):
+Для продакшена docroot должен указывать на `public/`, а не на корень проекта.
+Пример nginx:
+
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;
-    root /var/www/freshtracker;
-    index index.php;
+    server_name fresh.example.com;
+    root /var/www/freshtracker/public;
+    index index.html;
 
-    # Защита базы данных
-    location ~* \.sqlite$ {
-        return 404;
-    }
-
-    location ~ \.php$ {
-        try_files $uri =404;
+    location /api/ {
         include fastcgi_params;
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param SCRIPT_FILENAME $document_root/api.php;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
     }
 
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-    
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-    
-    access_log /var/log/nginx/freshtracker_access.log;
-    error_log /var/log/nginx/freshtracker_error.log;
+    location ~* \.(sqlite|sqlite-wal|sqlite-shm|phar)$ { return 404; }
+    location ~ /\. { return 404; }
 }
 ```
 
-4. **Откройте в браузере:**
-```
-http://your-domain.com/
-```
+БД, логи, `config.yaml` и `var/secret` держите вне webroot.
 
-## 🛠️ Настройка
+## Конфигурация
 
-### Конфигурация кнопки добавления
+Все ключи необязательны — отсутствующие берутся из `FreshTracker\Config\Defaults`.
+`config.yaml` и старый `freshtracker.yml` читаются, если существуют.
 
-В файле `index.php` в начале кода можно изменить положение кнопки:
+```yaml
+app:
+  theme: day            # day | night
+  timezone: Europe/Moscow
+  debug: false          # true — показывать текст исключений в API
 
-```php
-$config = [
-    'button_position' => 'right', // 'center' или 'right'
-];
-```
+database:
+  driver: sqlite        # sqlite | mysql | postgresql
+  path: freshtracker.sqlite
+  slow_query_threshold: 0.05
 
-### Умные настройки по типам продуктов
+access:
+  local:                # сети, которым доверяем
+    networks: ['127.0.0.1', '::1', '192.168.0.0/16']
+    visible: true       # false — полностью скрыть приложение от этих сетей
+    password: ''        # пусто — редактирование без пароля
+  public:               # все остальные
+    visible: always     # чтение разрешено всегда
+    password: ''        # пароль на редактирование
+    editable: never     # always | password | never
 
-Приложение автоматически подставляет рекомендуемые значения:
+security:
+  secret: ''            # HMAC для cookie; пусто — сгенерировать var/secret
+  trusted_proxies: []   # доверять X-Forwarded-For только этим адресам
 
-| Тип продукта | Вес по умолчанию | Срок годности |
-|--------------|------------------|---------------|
-| 🍚 Крупы | 0.9 кг | 1 год |
-| 🍝 Макароны | 0.5 кг | 6 месяцев |
-| 🥫 Консервы | 0.4 кг | 1 год |
-| 🫒 Масло | 0.9 кг | 1 месяц |
-| 🌾 Мука | 1.0 кг | 1 год |
-| 🌶️ Специи | 0.1 кг | 6 месяцев |
-| ☕ Чай/Кофе | 0.25 кг | 6 месяцев |
-| 📦 Разное | 1.0 кг | 30 дней |
-
-## 🎯 Использование
-
-### Добавление продукта
-
-1. Нажмите кнопку **"➕ Добавить продукт"**
-2. Заполните форму:
-    - **Наименование** - название продукта
-    - **Тип** - выберите категорию (автоматически подставит вес и срок)
-    - **Вес** - укажите количество в кг
-    - **Срок годности** - используйте кнопки быстрого ввода или календарь
-    - **Порог предупреждения** - за сколько дней предупреждать о истечении срока
-
-### Быстрый ввод дат
-
-- **Кнопки**: +3 дн, +7 дн, +14 дн, +30 дн, +60 дн
-- **По умолчанию** - устанавливает рекомендуемый срок для выбранного типа
-- **Календарь** - для точного выбора даты
-
-### Просмотр списка
-
-- Сортировка по дате истечения срока (от ближайших к дальним)
-- Цветовая индикация статуса
-- Возможность удаления продуктов
-
-## 🔧 Технические детали
-
-### Структура базы данных
-
-```sql
-CREATE TABLE products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    weight REAL NOT NULL,
-    expiry_date TEXT NOT NULL,
-    type TEXT NOT NULL,
-    threshold_days INTEGER DEFAULT 7
-);
+logging:
+  path: logs
+  level: info
 ```
 
-### Технологии
+### Модель доступа
 
-- **Backend**: PHP 8.0+ с PDO
-- **Database**: SQLite3
-- **Frontend**: Vanilla JavaScript, CSS3, HTML5
-- **Date Picker**: Flatpickr
-- **Styling**: Custom CSS с градиентами
+| Кто | Чтение | Редактирование |
+|---|---|---|
+| IP из `access.local.networks` | `visible: true` | всегда; если задан `password` — после его ввода |
+| Остальные (`public`) | всегда | `editable: always` / `password` / `never` |
 
-### Безопасность
+- `local` имеет приоритет над `public`. `visible: false` у local — отказ, без
+  фолбэка в public.
+- Пустой пароль при `editable: password` означает «редактирование запрещено»
+  (fail closed), а не «открыто».
+- Пароль хранится в конфиге в открытом виде; сравнение — `hash_equals`.
+- После ввода пароля выдаётся HMAC-подписанная cookie `ft_edit` на 30 дней
+  (`HttpOnly`, `SameSite=Lax`, `Secure` при HTTPS).
+- Запись защищена от CSRF: требуется `Content-Type: application/json`,
+  проверяются `Origin` и `Sec-Fetch-Site`.
+- Неудачные попытки входа ограничиваются (8 за 15 минут на IP).
 
-- Защита от XSS инъекций
-- Валидация входных данных
-- Запрет прямого доступа к `.sqlite` файлам
-- Подготовленные SQL запросы
+## Команды
 
-## 🐛 Решение проблем
+```bash
+php bin/ft migrate   # создать/обновить схему
+php bin/ft stats     # сводка по запасам
+php bin/ft check     # проверить конфиг, БД и секрет
+php bin/ft version
+make test            # тесты без внешних зависимостей
+```
 
-### База данных не создается
-- Проверьте права на запись в папке
-- Убедитесь, что включено расширение SQLite3 в PHP
+## API
 
-### Не работает добавление продуктов
-- Проверьте ошибки PHP в логах
-- Убедитесь, что включен JavaScript в браузере
+Все ответы — JSON: `{"status":"ok","data":…}` или
+`{"status":"error","message":…}`.
 
-### Не отображается календарь
-- Проверьте подключение к интернету (CDN для flatpickr)
-- Или загрузите flatpickr локально
+| Метод | Путь | Назначение |
+|---|---|---|
+| GET | `/api/config/` | тема, права, единицы, версия |
+| GET | `/api/types/` | типы продуктов |
+| GET | `/api/products/?status=active\|history&type=&q=` | список |
+| POST | `/api/products/` | создать |
+| PUT | `/api/products/{id}/` | изменить |
+| POST | `/api/products/{id}/use` | «использовал» |
+| POST | `/api/products/{id}/dispose` | «выкинул» |
+| POST | `/api/products/{id}/restore` | вернуть в запас |
+| DELETE | `/api/products/{id}/` | удалить запись |
+| GET | `/api/stats/` | сводка и отходы по месяцам |
+| POST | `/api/auth/login` | пароль на редактирование |
+| POST | `/api/auth/logout` | сбросить cookie |
 
-## 📄 Лицензия
+Вес передаётся в граммах (`weight_g`) либо как `weight` + `weight_unit: g|kg`.
+Даты — `Y-m-d`; также принимаются `d.m.Y` и `d/m/Y`.
 
-MIT License - свободное использование и модификация.
+## Данные
 
-## 🤝 Разработка
+`products` хранит `weight_g` (целые граммы), `status` (`active|used|disposed`),
+`closed_at` и `expiry_days_at_close` — сколько дней оставалось на момент списания.
+История — это `status <> 'active'`, отдельная таблица событий не нужна.
 
-Для внесения изменений:
+При первом запуске старая схема (килограммы + `is_deleted`) автоматически
+перестраивается: кг → граммы, `is_deleted = 1` → `disposed`, текстовый тип →
+`type_id`. Версия схемы хранится в `PRAGMA user_version`.
 
-1. Клонируйте репозиторий
-2. Внесите изменения в `index.php`
-3. Протестируйте функциональность
-4. Создайте pull request
+## PHAR
 
----
+`freshtracker.phar` — отдельный CLI-артефакт (`php bin/ft` внутри), собирается
+`make phar`. Веб-версия запускается из исходников и никогда не подхватывает PHAR
+автоматически.
 
-**Свежие продукты - здоровое питание!** 🥗
+## Тесты
+
+`make test` (или `php tests/run.php`) — домен (вес, даты, статусы), матрица
+доступа и миграция старой схемы на in-memory SQLite. Внешних зависимостей нет.

@@ -1,84 +1,172 @@
-# AGENTS.md
+# AGENTS.md — FreshTracker (karelwintersky/freshtracker)
 
-## FreshTracker — Текущее состояние
+Technical reference for the agent. Keeps the state of the code, not a changelog.
 
-PHP 8.0+ веб-приложение для учета продуктов и контроля сроков годности. SQLite3, vanilla JS фронтенд, Arris Router.
+## Overview
 
-### Структура проекта
+- Household food inventory: one shared stock, expiry control, used/disposed history.
+- PHP 8.2+, SQLite, YAML config, vanilla JS (no build step).
+- Not multi-user: access is decided by network (`local`) or by a password gate
+  (`public`) with `editable: always | password | never`.
+- Entry points: `public/api.php` (JSON API), `public/index.html` (SPA), `bin/ft` (CLI).
+- Namespace `FreshTracker\` → `app/` (PSR-4).
+
+## Dependencies (composer)
+
+Standalone Arris packages, **no `karelwintersky/arris` core**:
+
+`arris.config`, `arris.router`, `arris.logger`, `arris.database`, `arris.request`,
+`arris.toolkit.firewall`, `arris.toolkit.cli-console`, plus `symfony/yaml` and `psr/log`.
+
+Integration notes:
+- `Arris\Database\Connector` is lazy and PDO-compatible; `app/Database/*` is a
+  micro-DBAL on top of it (dialect SQL + schema). SQLite PRAGMAs are set in
+  `SQLiteDriver::configure()` — the Arris driver does not set WAL itself.
+- `Arris\Toolkit\FireWall` handles IPv4 ranges/CIDR only; IPv6 is implemented in
+  `AccessPolicy` (exact + CIDR).
+- `Arris\Request` reads `$_REQUEST`; JSON bodies are decoded by `Http\Input::json()`.
+- `AppRouter`: use named args for `group(callback: …)`; route params arrive as
+  named arguments (`{id}` → `$id`, declared as `string` and validated).
+
+## Structure
 
 ```
-freshtracker/
-├── app/
-│   ├── App.php          — Инициализация (PDO, конфиг)
-│   ├── Config.php       — Мерж конфигурации с дефолтами
-│   ├── Database.php     — Создание таблиц SQLite
-│   ├── Products.php     — CRUD операции с продуктами
-│   ├── Request.php      — Парсинг JSON из тела запроса
-│   ├── Response.php     — Формирование JSON-ответа
-│   └── Validator.php    — Валидация данных продукта
-├── public/
-│   ├── api.php          — Точка входа API, роутинг
-│   ├── index.html       — Фронтенд
-│   └── assets/
-│       ├── scripts.js   — Вся логика фронтенда
-│       ├── styles.css   — Стили
-│       └── flatpickr.*  — Библиотека выбора даты
-├── freshtracker.yml     — Конфиг (TODO: не парсится, захардкожен в api.php)
-├── freshtracker.sqlite  — База данных
-└── composer.json        — Зависимости (PHP)
+app/
+  Bootstrap/App.php            config → logger → DB → migrator → secret/session → policy
+  Config/Defaults.php          default config tree
+  Config/TypeDefaults.php      seed product types
+  Config/Version.php           VERSION constant (bumped per release)
+  AppDatabase.php              facade over a DatabaseDriver
+  Database/                    micro-DBAL: DatabaseDriver + SQLite/MySQL/PostgreSQL
+  Migrations/Migrator.php      schema v1 + legacy rebuild (kg→g, is_deleted→status)
+  Domain/                      Weight, Expiry, ProductStatus, ProductValidator
+  Repositories/                ProductRepository, TypeRepository
+  Access/                      AccessPolicy, AccessContext, EditSession, ClientIp, Throttle
+  Http/                        Router, Response, Input, JsonGuard, HttpException
+  Controllers/                 Config, Types, Products, Stats, Auth
+  Support/Secret.php           HMAC secret (env → config → var/secret)
+bin/ft                         CLI: migrate, stats, check, version
+public/
+  api.php                      front controller (boot, ACL, CSRF guard, dispatch)
+  router.php                   dev router for `php -S`
+  index.html                   SPA shell
+  assets/{styles,themes}.css   layout + colour tokens (day/night)
+  assets/{theme,api,app}.js    theme pre-paint, fetch wrapper, UI
+tests/run.php                  dependency-free test runner
+config.dist.yaml               documented config template
 ```
 
-### API маршруты
+## Config
 
-| Метод | Путь | Описание |
-|-------|------|----------|
-| GET | `/api/products/` | Список продуктов |
-| GET | `/api/products/{id}/` | Один продукт |
-| POST | `/api/products/` | Создать продукт |
-| PUT | `/api/products/{id}/` | Обновить продукт |
-| DELETE | `/api/products/{id}/` | Удалить продукт (soft delete) |
+`config.yaml` (or legacy `freshtracker.yml`) is optional; missing keys come from
+`Config\Defaults`. `APP_CONFIG`, `APP_DATABASE`, `APP_SECRET` env vars override.
 
-### Схема БД
+Sections: `app` (theme, timezone, debug), `database` (driver/path/slow query),
+`access.local` (networks, visible, password), `access.public` (visible, password,
+editable), `security` (secret, trusted_proxies), `logging`, `defaults`,
+`validation`.
+
+Access resolution (`Access\AccessPolicy::context`):
+- IP in `local.networks` → group `local`; `visible: false` denies everything;
+  edit allowed when `password` is empty or the `ft_edit` cookie grants `local`.
+- Otherwise group `public`; read always; edit per `editable`:
+  `always` → yes; `password` → only with grant (empty password = fail closed);
+  `never` → no.
+- Passwords are plaintext in config, compared with `hash_equals`.
+- `EditSession`: HMAC-SHA256 cookie `ft_edit` (scope + expiry), 30 days,
+  HttpOnly/SameSite=Lax/Secure on HTTPS.
+- `ClientIp`: uses `REMOTE_ADDR`; `X-Forwarded-For` only when the peer is in
+  `security.trusted_proxies`.
+
+## Database
+
+`PRAGMA user_version = 1`. SQLite schema:
 
 ```sql
-CREATE TABLE products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    weight REAL NOT NULL,
-    expiry_date TEXT NOT NULL,
-    type TEXT NOT NULL,
-    threshold_days INTEGER DEFAULT 7,
-    is_deleted BOOLEAN DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME NULL
-);
+types (
+  id, slug UNIQUE, title,
+  default_expiry_days, default_threshold_days, default_weight_g, sort_order
+)
+products (
+  id, name, type_id → types,
+  weight_g INTEGER CHECK (weight_g > 0),
+  expiry_date TEXT (Y-m-d),
+  threshold_days, status TEXT CHECK (active|used|disposed),
+  created_at, updated_at, closed_at, expiry_days_at_close
+)
+login_attempts (id, ip, attempted_at)
 ```
 
-### Что сделано (2026-07-17)
+- `days_remaining` = `julianday(date(expiry)) - julianday(date('now'))`, so the
+  expiry date itself is `0` (not negative).
+- History = `status <> 'active'`; no event table. `expiry_days_at_close` is a
+  snapshot for waste analytics.
+- `Migrator::ensure()` runs on boot and from `bin/ft migrate`; it is idempotent.
+  Legacy DBs are rebuilt in one transaction (only `types`/`login_attempts` are
+  created before the rebuild — product indexes reference `status`).
 
-Удалена вся система авторизации:
-- Удалён `app/Auth.php` и зависимость `firebase/php-jwt`
-- Убраны auth-маршруты, middleware, JWT-логика из `api.php`
-- Убрана auth-модалка и logout-кнопка из `index.html`
-- Убраны `AuthAPI`, `AuthManager`, `addAuthStyles` из `scripts.js`
-- Удалён неиспользуемый `public/assets/s.js`
-- Очищены auth-CSS из `styles.css`
-- Очищен `Config.php` (убрана `sendConfig()`, неиспользуемый `use PDO`)
-- Исправлен баг: дублирующийся `Response::setError` в catch-блоке `api.php`
-- Исправлен баг: пробел в `sendCORS` в маршруте OPTIONS
+## API
 
-### Известные проблемы
+JSON envelope: `{"status":"ok","data":…}` / `{"status":"error","message":…}`.
+Status codes: 200/201/400/401/403/404/409/415/422/429/500.
 
-1. **Конфиг не парсится** — `freshtracker.yml` существует, но `api.php` хардкодит все значения. YAML-файл не используется.
-2. **Смешанный подход к ошибкам** — `createProduct()` использует `Response::setError`, а `updateProduct()` бросает `RuntimeException`.
-3. **Нет тестов.**
-4. **Нет CSRF и rate limiting** (не критично для self-hosted).
+| Method | Path |
+|---|---|
+| GET | `/api/config/` |
+| GET | `/api/types/` |
+| GET | `/api/products/?status=active\|history&type=&q=` |
+| POST | `/api/products/` |
+| GET/PUT/DELETE | `/api/products/{id}/` |
+| POST | `/api/products/{id}/use` |
+| POST | `/api/products/{id}/dispose` |
+| POST | `/api/products/{id}/restore` |
+| GET | `/api/stats/` |
+| POST | `/api/auth/login` / `/api/auth/logout` |
 
-### Как запускать
+Weight input: `weight_g`, or `weight` + `weight_unit: g|kg`. Dates: `Y-m-d`,
+`d.m.Y`, `d/m/Y`, `d-m-Y`.
+
+Writes require `Content-Type: application/json` and pass `Http\JsonGuard`
+(Origin / Sec-Fetch-Site), which also blocks the classic `text/plain` CSRF.
+
+## Frontend
+
+- `theme.js` runs synchronously in `<head>` (no FOUC); theme choice in
+  `localStorage['ft-theme']`, default from `app.theme`.
+- `api.js` wraps fetch, unwraps the envelope, attaches HTTP status to `Error`.
+- `app.js`: dashboard (summary cards, grouped list), history tab, bottom-sheet
+  form, password modal, toasts. Event delegation only, no inline handlers.
+- Weight is stored in grams; the form switches g/kg automatically.
+- Actions: «Использовал» / «Выкинул»; contextual primary button by status.
+
+## Tests
 
 ```bash
-composer install
-# Веб-сервер (Nginx/Apache) с PHP 8.0+ и расширением sqlite3
-# Точка входа: public/api.php для API, public/index.html для фронтенда
+php tests/run.php   # or make test
 ```
+
+Covers: Weight, Expiry (date-only boundaries), ProductStatus, AccessPolicy matrix
+(local/public/passwords/IPv6), legacy migration and idempotency on in-memory SQLite.
+No PHPUnit required.
+
+## PHAR
+
+`make phar` builds a CLI-only `freshtracker.phar` (`main: bin/ft`, stub enabled).
+The web app always runs from source; `public/api.php` never auto-loads a PHAR.
+In `bin/ft`, `Phar::running()` selects the external install dir for config/DB/logs.
+
+## Status / TODO
+
+- No user accounts by design; a grant is a single shared password per scope.
+- MySQL/PostgreSQL drivers are best-effort and not covered by tests.
+- `public/_version` is a build artifact; source of truth is `Config\Version`.
+- Possible next steps: per-type thresholds in the UI, weight units beyond g/kg,
+  CSV export of the history.
+
+## History
+
+- 2026-07-17 — JWT auth removed.
+- 2026-07-21 — IP-based access control (`admin`/`view`).
+- 0.4.0 — rewrite: standalone Arris packages, DBAL over arris.database, grams,
+  used/disposed statuses, history/stats, day/night themes, password gate,
+  CLI, tests, PHAR as a separate CLI artifact.
