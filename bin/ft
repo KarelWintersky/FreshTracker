@@ -1,0 +1,112 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Arris\Toolkit\CLIConsole;
+use Arris\Toolkit\CLI\OptionType;
+use Arris\Toolkit\CLIRunner;
+use FreshTracker\Bootstrap\App;
+use FreshTracker\Migrations\Migrator;
+use FreshTracker\Repositories\ProductRepository;
+
+$installDir = dirname(__DIR__);
+$root = Phar::running() !== '' ? dirname(Phar::running()) : $installDir;
+$autoload = $installDir . '/vendor/autoload.php';
+
+if (!is_file($autoload)) {
+    fwrite(STDERR, "Composer dependencies are not installed\n");
+    exit(1);
+}
+
+require $autoload;
+
+try {
+    App::boot($root);
+} catch (Throwable $e) {
+    fwrite(STDERR, 'Bootstrap failed: ' . $e->getMessage() . PHP_EOL);
+    exit(1);
+}
+
+$cli = new CLIRunner('FreshTracker CLI');
+
+$cli->register(
+    option: 'migrate',
+    short: 'm',
+    description: 'Create or upgrade the database schema',
+    type: OptionType::Flag,
+    handler: static function ($value, CLIRunner $runner): void {
+        (new Migrator(App::db()))->ensure();
+        CLIConsole::say("<font color='green'>Schema is up to date</font>");
+    },
+);
+
+$cli->register(
+    option: 'stats',
+    short: 's',
+    description: 'Print inventory statistics',
+    type: OptionType::Flag,
+    handler: static function ($value, CLIRunner $runner): void {
+        $products = new ProductRepository(App::db());
+        $active = $products->active();
+        $closed = $products->history();
+
+        $activeGrams = array_sum(array_map(static fn (array $row): int => (int) $row['weight_g'], $active));
+        $usedGrams = 0;
+        $disposedGrams = 0;
+
+        foreach ($closed as $row) {
+            if ($row['status'] === 'used') {
+                $usedGrams += (int) $row['weight_g'];
+            } elseif ($row['status'] === 'disposed') {
+                $disposedGrams += (int) $row['weight_g'];
+            }
+        }
+
+        CLIConsole::say("Active items:  <font color='green'>" . count($active) . '</font>');
+        CLIConsole::say("Active weight: <font color='green'>" . $activeGrams . ' g</font>');
+        CLIConsole::say("Used:          <font color='green'>" . $usedGrams . ' g</font>');
+        CLIConsole::say("Disposed:      <font color='red'>" . $disposedGrams . ' g</font>');
+    },
+);
+
+$cli->register(
+    option: 'check',
+    short: 'c',
+    description: 'Check configuration, database and secret',
+    type: OptionType::Flag,
+    handler: static function ($value, CLIRunner $runner): void {
+        $configPath = getenv('APP_CONFIG') ?: App::root() . '/config.yaml';
+        CLIConsole::say('Config:   ' . (is_file($configPath) ? $configPath : 'defaults (no config.yaml)'));
+        CLIConsole::say('Driver:   ' . App::db()->driverName());
+        CLIConsole::say('Database: ' . (App::db()->path() ?? '—'));
+        $secretPresent = (getenv('APP_SECRET') ?: '') !== ''
+            || (string) App::config('security.secret', '') !== ''
+            || is_file(App::root() . '/var/secret');
+        CLIConsole::say('Secret:   ' . ($secretPresent ? 'present' : 'missing'));
+        CLIConsole::say('Theme:    ' . (string) App::config('app.theme', 'day'));
+        CLIConsole::say('Access:   local networks = ' . count((array) App::config('access.local.networks', []))
+            . ', public editable = ' . (string) App::config('access.public.editable', 'never'));
+    },
+);
+
+$cli->register(
+    option: 'version',
+    short: 'V',
+    description: 'Print the application version',
+    type: OptionType::Flag,
+    handler: static function ($value, CLIRunner $runner): void {
+        CLIConsole::say('FreshTracker ' . App::version());
+    },
+);
+
+// Support both `bin/ft migrate` and `bin/ft --migrate`.
+$commands = ['migrate', 'stats', 'check', 'version'];
+$first = $argv[1] ?? null;
+if (is_string($first) && in_array($first, $commands, true)) {
+    $argv = array_merge(['ft', '--' . $first], array_slice($argv, 2));
+    $_SERVER['argv'] = $argv;
+    $_SERVER['argc'] = count($argv);
+}
+
+$cli->run();

@@ -1,6 +1,6 @@
 {
     "name": "karelwintersky/freshtracker",
-    "description": "Fresh Tracker",
+    "description": "Fresh Tracker — household food inventory with expiry control",
     "type": "project",
     "license": "MIT",
     "authors": [
@@ -14,27 +14,33 @@
             "FreshTracker\\": "app/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "FreshTracker\\Tests\\": "tests/"
+        }
+    },
     "require": {
         "php": "^8.2",
         "ext-json": "*",
         "ext-mbstring": "*",
         "ext-pdo": "*",
+        "ext-readline": "*",
         "psr/log": "*",
-        "karelwintersky/arris": "^2.103",
-        "karelwintersky/arris.logger": "^2",
-        "karelwintersky/arris.database": "^2",
-        "karelwintersky/arris.entity.path": "^1.0",
-        "karelwintersky/arris.router": "^2.2",
+        "karelwintersky/arris.config": "^2.0",
+        "karelwintersky/arris.router": "^2.3",
+        "karelwintersky/arris.logger": "^2.1",
+        "karelwintersky/arris.database": "^2.5",
+        "karelwintersky/arris.request": "^0.99",
+        "karelwintersky/arris.toolkit.firewall": "^1.1",
+        "karelwintersky/arris.toolkit.cli-console": "^1.6",
         "symfony/yaml": "^7.4"
     },
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://satisfactory.click",
-            "canonical": false
-        }
-    ],
     "config": {
-        "secure-http": true
+        "secure-http": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "@php tests/run.php",
+        "migrate": "@php bin/ft migrate"
     }
 }

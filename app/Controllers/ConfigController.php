@@ -1,16 +1,36 @@
 <?php
 
+declare(strict_types=1);
+
 namespace FreshTracker\Controllers;
 
-use FreshTracker\App;
+use FreshTracker\Bootstrap\App;
+use FreshTracker\Http\Response;
 
-class ConfigController
+final class ConfigController
 {
-    public static function get(): void
+    public function get(): never
     {
-        ResponseController::set([
-            'theme'         => App::config('theme', null, 'light'),
-            'access_level'  => App::getAccessLevel(),
+        $context = App::context();
+
+        Response::ok([
+            'app' => [
+                'name'    => (string) App::config('app.name', 'FreshTracker'),
+                'version' => App::version(),
+                'theme'   => (string) App::config('app.theme', 'day'),
+            ],
+            'access' => [
+                'group'          => $context->group,
+                'can_view'       => $context->canView,
+                'can_edit'       => $context->canEdit,
+                'password_scope' => $context->editPasswordScope,
+            ],
+            'defaults' => [
+                'threshold_days' => (int) App::config('defaults.threshold_days', 7),
+            ],
+            'units' => [
+                'weight' => ['g', 'kg'],
+            ],
         ]);
     }
 }

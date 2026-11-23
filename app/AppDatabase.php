@@ -4,34 +4,55 @@ declare(strict_types=1);
 
 namespace FreshTracker;
 
+use Arris\Database\Config as ArrisDatabaseConfig;
+use Arris\Database\Connector;
 use FreshTracker\Database\DatabaseDriver;
-use FreshTracker\Database\SQLiteDriver;
 use FreshTracker\Database\MySQLDriver;
 use FreshTracker\Database\PostgreSQLDriver;
-use PDO;
-use PDOStatement;
+use FreshTracker\Database\SQLiteDriver;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
-class AppDatabase
+/**
+ * Facade over a database driver. Keeps the dialect-specific SQL fragments
+ * out of controllers and repositories.
+ */
+final class AppDatabase
 {
     private DatabaseDriver $driver;
+    private ?string $path;
 
-    public function __construct(array $config)
+    public function __construct(array $config, ?LoggerInterface $logger = null)
     {
-        $driverName = $config['driver'] ?? 'sqlite';
+        $driverName = strtolower((string) ($config['driver'] ?? 'sqlite'));
+        $driverName = $driverName === 'pgsql' ? 'postgresql' : $driverName;
 
-        $driverClass = match ($driverName) {
-            'sqlite'     => SQLiteDriver::class,
-            'mysql'      => MySQLDriver::class,
-            'postgresql' => PostgreSQLDriver::class,
-            default      => null,
-        };
+        $path = $config['path'] ?? $config['database'] ?? null;
+        $this->path = is_string($path) ? $path : null;
 
-        if ($driverClass === null || !class_exists($driverClass)) {
-            throw new RuntimeException("Database driver not found: {$driverName}");
+        if ($driverName === 'sqlite' && is_string($path) && $path !== ':memory:') {
+            $directory = dirname($path);
+            if (!is_dir($directory) && !@mkdir($directory, 0775, true) && !is_dir($directory)) {
+                throw new RuntimeException("Cannot create database directory: {$directory}");
+            }
         }
 
-        $this->driver = new $driverClass($config);
+        $connector = new Connector(new ArrisDatabaseConfig([
+            'driver'                => $driverName === 'postgresql' ? 'pgsql' : $driverName,
+            'database'              => $path,
+            'hostname'              => $config['host'] ?? $config['hostname'] ?? '127.0.0.1',
+            'port'                  => $config['port'] ?? null,
+            'username'              => $config['user'] ?? $config['username'] ?? 'root',
+            'password'              => $config['password'] ?? '',
+            'slow_query_threshold'  => $config['slow_query_threshold'] ?? 1.0,
+        ], $logger));
+
+        $this->driver = match ($driverName) {
+            'sqlite'        => new SQLiteDriver($connector, $config),
+            'mysql'         => new MySQLDriver($connector, $config),
+            'postgresql'    => new PostgreSQLDriver($connector, $config),
+            default         => throw new RuntimeException("Unsupported database driver: {$driverName}"),
+        };
     }
 
     public function getDriver(): DatabaseDriver
@@ -39,12 +60,22 @@ class AppDatabase
         return $this->driver;
     }
 
-    public function getPdo(): PDO
+    public function driverName(): string
     {
-        return $this->driver->getPdo();
+        return $this->driver->name();
     }
 
-    public function query(string $sql, array $params = []): PDOStatement
+    public function path(): ?string
+    {
+        return $this->path;
+    }
+
+    public function getPdo(): \PDO
+    {
+        return $this->driver->pdo();
+    }
+
+    public function query(string $sql, array $params = []): \PDOStatement
     {
         return $this->driver->query($sql, $params);
     }
@@ -94,26 +125,9 @@ class AppDatabase
         return $this->driver->transaction($callback);
     }
 
-    // === SQL fragment delegation ===
-
     public function sqlNow(): string
     {
         return $this->driver->sqlNow();
-    }
-
-    public function sqlNowMinusInterval(int $seconds): string
-    {
-        return $this->driver->sqlNowMinusInterval($seconds);
-    }
-
-    public function sqlNowPlusInterval(int $seconds): string
-    {
-        return $this->driver->sqlNowPlusInterval($seconds);
-    }
-
-    public function sqlCoalesceNow(string $column): string
-    {
-        return $this->driver->sqlCoalesceNow($column);
     }
 
     public function sqlDaysRemaining(string $dateColumn): string
@@ -121,40 +135,8 @@ class AppDatabase
         return $this->driver->sqlDaysRemaining($dateColumn);
     }
 
-    public function sqlNullsFirst(string $column): string
-    {
-        return $this->driver->sqlNullsFirst($column);
-    }
-
-    // === Statement helper delegation ===
-
-    public function insertIgnore(string $table, array $data): int
-    {
-        return $this->driver->insertIgnore($table, $data);
-    }
-
-    public function upsert(string $table, array $data, string $conflictColumn, array $set): void
-    {
-        $this->driver->upsert($table, $data, $conflictColumn, $set);
-    }
-
     public function createTables(): void
     {
         $this->driver->createTables();
-    }
-
-    public function getDatabaseSize(): int
-    {
-        return $this->driver->getDatabaseSize();
-    }
-
-    public function close(): void
-    {
-        $this->driver->close();
-    }
-
-    public function __destruct()
-    {
-        $this->close();
     }
 }

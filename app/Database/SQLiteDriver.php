@@ -5,153 +5,131 @@ declare(strict_types=1);
 namespace FreshTracker\Database;
 
 use PDO;
-use RuntimeException;
 
-class SQLiteDriver extends DatabaseDriver
+final class SQLiteDriver extends DatabaseDriver
 {
-    protected function connect(): PDO
+    public function name(): string
     {
-        $dbPath = $this->config['path'] ?? $this->config['host'];
-
-        $dbDir = dirname($dbPath);
-        if (!is_dir($dbDir)) {
-            if (!mkdir($dbDir, 0755, true)) {
-                throw new RuntimeException("Cannot create database directory: {$dbDir}");
-            }
-        }
-
-        try {
-            $pdo = new PDO(
-                "sqlite:{$dbPath}",
-                null,
-                null,
-                [
-                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE  => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES    => false,
-                    PDO::ATTR_TIMEOUT             => 5,
-                ]
-            );
-
-            $pdo->exec('PRAGMA journal_mode = WAL');
-            $pdo->exec('PRAGMA foreign_keys = ON');
-            $pdo->exec('PRAGMA busy_timeout = 5000');
-            $pdo->exec('PRAGMA synchronous = NORMAL');
-
-            return $pdo;
-        } catch (\PDOException $e) {
-            throw new RuntimeException("SQLite connection failed: {$e->getMessage()}", 0, $e);
-        }
+        return 'sqlite';
     }
 
-    // === SQL fragments ===
+    protected function configure(): void
+    {
+        $this->connector->exec('PRAGMA journal_mode = WAL');
+        $this->connector->exec('PRAGMA foreign_keys = ON');
+        $this->connector->exec('PRAGMA busy_timeout = 5000');
+        $this->connector->exec('PRAGMA synchronous = NORMAL');
+    }
 
     public function sqlNow(): string
     {
         return "datetime('now')";
     }
 
-    public function sqlNowMinusInterval(int $seconds): string
-    {
-        return "datetime('now', '-{$seconds} seconds')";
-    }
-
-    public function sqlNowPlusInterval(int $seconds): string
-    {
-        return "datetime('now', '+{$seconds} seconds')";
-    }
-
-    public function sqlCoalesceNow(string $column): string
-    {
-        return "COALESCE({$column}, datetime('now'))";
-    }
-
     public function sqlDaysRemaining(string $dateColumn): string
     {
-        return "julianday({$dateColumn}) - julianday('now')";
+        return "CAST(julianday(date({$dateColumn})) - julianday(date('now')) AS INTEGER)";
     }
-
-    public function sqlNullsFirst(string $column): string
-    {
-        return "{$column} NULLS FIRST";
-    }
-
-    // === Statement helpers ===
-
-    public function insertIgnore(string $table, array $data): int
-    {
-        $cols = implode(', ', array_keys($data));
-        $placeholders = implode(', ', array_fill(0, count($data), '?'));
-        return $this->insert(
-            "INSERT OR IGNORE INTO {$table} ({$cols}) VALUES ({$placeholders})",
-            array_values($data)
-        );
-    }
-
-    public function upsert(string $table, array $data, string $conflictColumn, array $set): void
-    {
-        $cols = implode(', ', array_keys($data));
-        $placeholders = implode(', ', array_fill(0, count($data), '?'));
-
-        $assignments = [];
-        $params = array_values($data);
-
-        foreach ($set as $col => $val) {
-            if ($val === null) {
-                $assignments[] = "{$col} = NULL";
-            } elseif ($val === '=excluded') {
-                $assignments[] = "{$col} = excluded.{$col}";
-            } elseif ($val === '=now') {
-                $assignments[] = "{$col} = {$this->sqlNow()}";
-            } elseif (is_string($val) && str_starts_with($val, '=expr:')) {
-                $assignments[] = "{$col} = " . substr($val, 6);
-            } else {
-                $assignments[] = "{$col} = ?";
-                $params[] = $val;
-            }
-        }
-
-        $sql = "INSERT INTO {$table} ({$cols}) VALUES ({$placeholders})"
-            . " ON CONFLICT({$conflictColumn}) DO UPDATE SET "
-            . implode(', ', $assignments);
-
-        $this->execute($sql, $params);
-    }
-
-    // === Schema ===
 
     public function createTables(): void
     {
-        $this->getPdo()->exec("
-            CREATE TABLE IF NOT EXISTS products (
+        $this->createAuxTables();
+
+        $this->connector->exec(self::productsTableSql('products'));
+        foreach ($this->indexStatements() as $sql) {
+            $this->connector->exec($sql);
+        }
+    }
+
+    /**
+     * Tables that do not depend on the products schema.
+     * Used before rebuilding a legacy products table.
+     */
+    public function createAuxTables(): void
+    {
+        foreach ($this->auxStatements() as $sql) {
+            $this->connector->exec($sql);
+        }
+    }
+
+    /** @return list<string> */
+    private function auxStatements(): array
+    {
+        return [
+            "CREATE TABLE IF NOT EXISTS types (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                weight REAL NOT NULL,
-                expiry_date TEXT NOT NULL,
-                type TEXT NOT NULL,
-                threshold_days INTEGER DEFAULT 7,
-                is_deleted BOOLEAN DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                deleted_at DATETIME NULL
-            )
-        ");
-
-        $this->getPdo()->exec("CREATE INDEX IF NOT EXISTS idx_expiry_date ON products(expiry_date)");
-        $this->getPdo()->exec("CREATE INDEX IF NOT EXISTS idx_type ON products(type)");
-        $this->getPdo()->exec("CREATE INDEX IF NOT EXISTS idx_is_deleted ON products(is_deleted)");
+                slug TEXT NOT NULL UNIQUE,
+                title TEXT NOT NULL,
+                default_expiry_days INTEGER NOT NULL DEFAULT 30,
+                default_threshold_days INTEGER NOT NULL DEFAULT 7,
+                default_weight_g INTEGER NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0
+            )",
+            "CREATE TABLE IF NOT EXISTS login_attempts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ip TEXT NOT NULL,
+                attempted_at TEXT NOT NULL
+            )",
+            'CREATE INDEX IF NOT EXISTS idx_login_attempts_ip ON login_attempts(ip, attempted_at)',
+        ];
     }
 
-    // === SQLite-specific ===
-
-    public function getDatabaseSize(): int
+    /** @return list<string> */
+    public function indexStatements(): array
     {
-        $path = $this->config['path'] ?? $this->config['host'];
-        return file_exists($path) ? filesize($path) : 0;
+        return [
+            'CREATE INDEX IF NOT EXISTS idx_products_status_expiry ON products(status, expiry_date)',
+            'CREATE INDEX IF NOT EXISTS idx_products_type ON products(type_id)',
+        ];
     }
 
-    public function vacuum(): void
+    public static function productsTableSql(string $table = 'products'): string
     {
-        $this->getPdo()->exec('VACUUM');
+        return "CREATE TABLE IF NOT EXISTS {$table} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            type_id INTEGER NOT NULL REFERENCES types(id),
+            weight_g INTEGER NOT NULL CHECK (weight_g > 0),
+            expiry_date TEXT NOT NULL,
+            threshold_days INTEGER NOT NULL DEFAULT 7,
+            status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'used', 'disposed')),
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            closed_at TEXT NULL,
+            expiry_days_at_close INTEGER NULL
+        )";
+    }
+
+    public function tableColumns(string $table): array
+    {
+        $columns = [];
+        foreach ($this->fetchAll('PRAGMA table_info(' . $this->quoteIdentifier($table) . ')') as $row) {
+            $columns[(string) $row['name']] = $row;
+        }
+
+        return $columns;
+    }
+
+    public function tableExists(string $table): bool
+    {
+        return (bool) $this->fetchValue(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            [$table]
+        );
+    }
+
+    public function userVersion(): int
+    {
+        return (int) $this->fetchValue('PRAGMA user_version');
+    }
+
+    public function setUserVersion(int $version): void
+    {
+        $this->connector->exec('PRAGMA user_version = ' . $version);
+    }
+
+    private function quoteIdentifier(string $identifier): string
+    {
+        return '"' . str_replace('"', '""', $identifier) . '"';
     }
 }

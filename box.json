@@ -1,30 +1,17 @@
 {
-    "chmod": "0755",
-    "compactors": [
-        "KevinGH\\Box\\Compactor\\Php",
-        "KevinGH\\Box\\Compactor\\Json"
-    ],
-    "compression": "GZ",
-    "main": "vendor/autoload.php",
+    "main": "bin/ft",
     "output": "freshtracker.phar",
-    "force-autodiscovery": true,
-
-    "stub": false,
-
+    "stub": true,
+    "chmod": "0755",
+    "compression": "GZ",
     "check-requirements": false,
-
+    "compactors": [
+        "KevinGH\\Box\\Compactor\\Php"
+    ],
     "finder": [
         {
             "name": "*.php",
-            "in": ["app"]
-        },
-        {
-            "name": "*.css",
-            "in": ["public/assets"]
-        },
-        {
-            "name": "*.js",
-            "in": ["public/assets"]
+            "in": ["app", "bin"]
         },
         {
             "name": ["*.php", "*.json", "*.h", "*.so", "*.dll"],
@@ -34,7 +21,6 @@
                 ".editorconfig",
                 "infection.json.dist",
                 ".php-cs-fixer.dist.php",
-                ".valgrindc",
                 "*.exe",
                 "*.md",
                 "LICENSE",
@@ -52,6 +38,5 @@
             ]
         }
     ],
-    "files": ["public/_version"],
     "dump-autoload": true
 }

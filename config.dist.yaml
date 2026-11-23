@@ -1,0 +1,58 @@
+# FreshTracker configuration.
+# Copy to config.yaml (gitignored) and adjust for your installation.
+
+app:
+  name: FreshTracker
+  # day | night
+  theme: day
+  timezone: Europe/Moscow
+  debug: false
+
+database:
+  driver: sqlite
+  path: freshtracker.sqlite
+  slow_query_threshold: 0.05
+
+access:
+  # Requests from these networks are considered local.
+  local:
+    networks:
+      - 127.0.0.1
+      - ::1
+      - 192.168.0.0/16
+      - 10.0.0.0/8
+    # false — hide the app from local users completely.
+    visible: true
+    # Empty password — local users may edit without a password.
+    # Non-empty — the password is required to edit (viewing stays open).
+    password: ''
+
+  # Everyone else.
+  public:
+    # The inventory is always readable from outside; use editable: never
+    # if the installation must stay read-only.
+    visible: always
+    # Password used to unlock editing. Ignored when editable: always.
+    password: ''
+    # always | password | never
+    editable: never
+
+security:
+  # HMAC key for the edit-session cookie. Empty — generated once in var/secret.
+  secret: ''
+  # Only trust X-Forwarded-For when the request comes from one of these proxies.
+  trusted_proxies: []
+
+logging:
+  path: logs
+  # debug | info | notice | warning | error
+  level: info
+
+defaults:
+  threshold_days: 7
+
+validation:
+  min_weight_g: 1
+  max_weight_g: 5000000
+  max_threshold_days: 365
+  max_name_length: 255

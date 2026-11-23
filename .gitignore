@@ -1,3 +1,19 @@
 .idea
-freshtracker.sqlite
 /vendor/
+
+# Runtime data and local configuration
+/config.yaml
+/config.local.yaml
+/freshtracker.yml
+/freshtracker.sqlite
+/freshtracker.sqlite-shm
+/freshtracker.sqlite-wal
+/freshtracker.phar
+/box.phar
+/logs/
+/var/
+/coverage/
+/.phpunit.cache/
+
+# Build artifact
+/public/_version

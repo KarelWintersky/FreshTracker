@@ -1,5 +1,5 @@
 #!/usr/bin/make
-.PHONY: help install update build dchv dchr dchn
+.PHONY: help install update build phar test migrate serve dchv dchr dchn
 
 PACKAGE_NAME = freshtracker
 PROJECT = freshtracker
@@ -31,6 +31,15 @@ build:		##@build Build project
 	box compile --config=box.json
 	@dpkg-buildpackage -rfakeroot --no-sign
 	@dh_clean
+
+test:		##@development Run the test suite
+	@php tests/run.php
+
+migrate:	##@development Create or upgrade the database schema
+	@php bin/ft migrate
+
+serve:		##@development Run the development server on 127.0.0.1:8080
+	@php -S 127.0.0.1:8080 -t public public/router.php
 
 update:		##@build Update project from GIT
 	@echo Updating project from GIT

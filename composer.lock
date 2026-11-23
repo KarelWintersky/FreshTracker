@@ -1,0 +1,679 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "109ec03823042700e5c124868c3b7b73",
+    "packages": [
+        {
+            "name": "karelwintersky/arris.config",
+            "version": "2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ArrisFramework/Arris.Config.git",
+                "reference": "c5a9387dbe2b16e95a741eb83e2c892334d90894"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ArrisFramework/Arris.Config/zipball/c5a9387dbe2b16e95a741eb83e2c892334d90894",
+                "reference": "c5a9387dbe2b16e95a741eb83e2c892334d90894",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "internal/toml": "^1.1",
+                "phpunit/phpunit": "^10",
+                "symfony/yaml": "^5.4.56 || ^6.4.50 || ^7.4.23"
+            },
+            "suggest": {
+                "internal/toml": "Required to read TOML configs",
+                "karelwintersky/arris": "Karel Wintersky's Application µFramework",
+                "symfony/yaml": "Required to read YAML configs"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Arris\\": "sources"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Karel Wintersky",
+                    "email": "karel.wintersky@gmail.com"
+                }
+            ],
+            "description": "Arris µFramework: read-only config reader and AppConfig",
+            "keywords": [
+                "arris",
+                "config"
+            ],
+            "support": {
+                "issues": "https://github.com/ArrisFramework/Arris.Config/issues",
+                "source": "https://github.com/ArrisFramework/Arris.Config/tree/2.0.0"
+            },
+            "time": "2026-11-19T12:38:32+00:00"
+        },
+        {
+            "name": "karelwintersky/arris.database",
+            "version": "2.100.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ArrisFramework/Arris.Database.git",
+                "reference": "9c7562b551a06c9e82be380caffc93c8b4cf49bd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ArrisFramework/Arris.Database/zipball/9c7562b551a06c9e82be380caffc93c8b4cf49bd",
+                "reference": "9c7562b551a06c9e82be380caffc93c8b4cf49bd",
+                "shasum": ""
+            },
+            "require": {
+                "ext-pdo": "*",
+                "php": "^8.2",
+                "psr/log": "*"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^10.0|^11.0"
+            },
+            "suggest": {
+                "karelwintersky/arris.entity": "Arris µFramework: Entity Types",
+                "karelwintersky/arris.helpers": "Arris µFramework: helpers"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Arris\\": "sources",
+                    "Tests\\": "tests"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Karel Wintersky",
+                    "email": "karel.wintersky@gmail.com"
+                }
+            ],
+            "description": "Arris µFramework database lazy connector",
+            "keywords": [
+                "database"
+            ],
+            "support": {
+                "issues": "https://github.com/ArrisFramework/Arris.Database/issues",
+                "source": "https://github.com/ArrisFramework/Arris.Database/tree/2.100.0"
+            },
+            "time": "2026-11-20T08:01:41+00:00"
+        },
+        {
+            "name": "karelwintersky/arris.logger",
+            "version": "2.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ArrisFramework/Arris.AppLogger.git",
+                "reference": "9679482abfdf9e40d99e0093af457ae13dc7b56b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ArrisFramework/Arris.AppLogger/zipball/9679482abfdf9e40d99e0093af457ae13dc7b56b",
+                "reference": "9679482abfdf9e40d99e0093af457ae13dc7b56b",
+                "shasum": ""
+            },
+            "require": {
+                "php": "8.*",
+                "psr/log": "*"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^10"
+            },
+            "suggest": {
+                "karelwintersky/arris": "Arris µFramework: AppRouter class",
+                "karelwintersky/arris.helpers": "Arris µFramework: helpers",
+                "monolog/monolog": "^2.9.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Arris\\": [
+                        "interfaces",
+                        "sources"
+                    ],
+                    "Arris\\AppLogger\\": [
+                        "core/AppLogger"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Karel Wintersky",
+                    "email": "karel.wintersky@gmail.com"
+                }
+            ],
+            "description": "Arris µFramework - AppLogger class",
+            "support": {
+                "issues": "https://github.com/ArrisFramework/Arris.AppLogger/issues",
+                "source": "https://github.com/ArrisFramework/Arris.AppLogger/tree/2.2.1"
+            },
+            "time": "2026-08-08T23:36:25+00:00"
+        },
+        {
+            "name": "karelwintersky/arris.request",
+            "version": "0.99.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ArrisFramework/Arris.Request.git",
+                "reference": "6ccfc07c96db66bd1bfd40b4b0b37b283a119ed5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ArrisFramework/Arris.Request/zipball/6ccfc07c96db66bd1bfd40b4b0b37b283a119ed5",
+                "reference": "6ccfc07c96db66bd1bfd40b4b0b37b283a119ed5",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^10"
+            },
+            "suggest": {
+                "karelwintersky/arris": "Arris µFramework"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Arris\\": "sources"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Karel Wintersky",
+                    "email": "karel.wintersky@gmail.com"
+                }
+            ],
+            "description": "Arris µFramework: Fluent request data reader",
+            "keywords": [
+                "arris",
+                "fluent",
+                "input",
+                "request"
+            ],
+            "support": {
+                "issues": "https://github.com/ArrisFramework/Arris.Request/issues",
+                "source": "https://github.com/ArrisFramework/Arris.Request/tree/0.99.2"
+            },
+            "time": "2026-09-09T22:45:52+00:00"
+        },
+        {
+            "name": "karelwintersky/arris.router",
+            "version": "2.4.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ArrisFramework/Arris.AppRouter.git",
+                "reference": "ddb486d7320f5f5cdd2aaeae2e21eec751734f69"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ArrisFramework/Arris.AppRouter/zipball/ddb486d7320f5f5cdd2aaeae2e21eec751734f69",
+                "reference": "ddb486d7320f5f5cdd2aaeae2e21eec751734f69",
+                "shasum": ""
+            },
+            "require": {
+                "php": "8.*",
+                "psr/log": "*"
+            },
+            "require-dev": {
+                "karelwintersky/arris": "*",
+                "phpunit/phpunit": "^11"
+            },
+            "suggest": {
+                "karelwintersky/arris": "Arris µFramework core",
+                "karelwintersky/arris.helpers": "Arris µFramework helpers",
+                "karelwintersky/arris.logger": "Arris µFramework AppLogger"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Arris\\": "src/",
+                    "Arris\\AppRouter\\": "src/AppRouter"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Karel Wintersky",
+                    "email": "karel.wintersky@yandex.ru"
+                }
+            ],
+            "description": "Arris Application µFramework - AppRouter class",
+            "keywords": [
+                "fast route",
+                "fast-router",
+                "middleware",
+                "middlewares",
+                "routing"
+            ],
+            "support": {
+                "issues": "https://github.com/ArrisFramework/Arris.AppRouter/issues",
+                "source": "https://github.com/ArrisFramework/Arris.AppRouter/tree/2.4.3"
+            },
+            "time": "2026-09-08T14:27:43+00:00"
+        },
+        {
+            "name": "karelwintersky/arris.toolkit.cli-console",
+            "version": "1.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ArrisFramework/Arris.Toolkit.CLIConsole.git",
+                "reference": "04248df1afe5e07faef087aa2ad6aad3f3a49adf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ArrisFramework/Arris.Toolkit.CLIConsole/zipball/04248df1afe5e07faef087aa2ad6aad3f3a49adf",
+                "reference": "04248df1afe5e07faef087aa2ad6aad3f3a49adf",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "ext-readline": "*",
+                "php": "^8.2"
+            },
+            "suggest": {
+                "karelwintersky/arris": "Arris µFramework",
+                "laravel/prompts": "Laravel Prompts"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Arris\\Toolkit\\": [
+                        "interfaces",
+                        "sources"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Karel Wintersky",
+                    "email": "karel.wintersky@gmail.com"
+                }
+            ],
+            "description": "Arris µFramework - CLIConsole helper",
+            "keywords": [
+                "arris",
+                "console"
+            ],
+            "support": {
+                "issues": "https://github.com/ArrisFramework/Arris.Toolkit.CLIConsole/issues",
+                "source": "https://github.com/ArrisFramework/Arris.Toolkit.CLIConsole/tree/1.6.0"
+            },
+            "time": "2026-10-28T03:21:53+00:00"
+        },
+        {
+            "name": "karelwintersky/arris.toolkit.firewall",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ArrisFramework/Arris.Toolkit.Firewall.git",
+                "reference": "000f82d7fc3360a50dc0158650d64ddb2fe3c268"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ArrisFramework/Arris.Toolkit.Firewall/zipball/000f82d7fc3360a50dc0158650d64ddb2fe3c268",
+                "reference": "000f82d7fc3360a50dc0158650d64ddb2fe3c268",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^10"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Arris\\Toolkit\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Karel Wintersky",
+                    "email": "wombat@fontanka.ru"
+                }
+            ],
+            "description": "Library providing IP filtering features",
+            "keywords": [
+                "IP",
+                "filtering",
+                "firewall"
+            ],
+            "support": {
+                "issues": "https://github.com/ArrisFramework/Arris.Toolkit.Firewall/issues",
+                "source": "https://github.com/ArrisFramework/Arris.Toolkit.Firewall/tree/1.1.0"
+            },
+            "time": "2026-08-03T20:13:27+00:00"
+        },
+        {
+            "name": "psr/log",
+            "version": "3.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/log.git",
+                "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+                "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "3.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Log\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for logging libraries",
+            "homepage": "https://github.com/php-fig/log",
+            "keywords": [
+                "log",
+                "psr",
+                "psr-3"
+            ],
+            "support": {
+                "source": "https://github.com/php-fig/log/tree/3.0.2"
+            },
+            "time": "2024-09-11T13:17:53+00:00"
+        },
+        {
+            "name": "symfony/deprecation-contracts",
+            "version": "v3.8.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/deprecation-contracts.git",
+                "reference": "feb1edf4e546af3b85c5caebe8359a20db230ca3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/feb1edf4e546af3b85c5caebe8359a20db230ca3",
+                "reference": "feb1edf4e546af3b85c5caebe8359a20db230ca3",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1"
+            },
+            "type": "library",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/contracts",
+                    "name": "symfony/contracts"
+                },
+                "branch-alias": {
+                    "dev-main": "3.8-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "function.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "A generic function and convention to trigger deprecation notices",
+            "homepage": "https://symfony.com",
+            "support": {
+                "source": "https://github.com/symfony/deprecation-contracts/tree/v3.8.1"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-09-16T14:15:10+00:00"
+        },
+        {
+            "name": "symfony/polyfill-ctype",
+            "version": "v1.37.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-ctype.git",
+                "reference": "141046a8f9477948ff284fa65be2095baafb94f2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/141046a8f9477948ff284fa65be2095baafb94f2",
+                "reference": "141046a8f9477948ff284fa65be2095baafb94f2",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "provide": {
+                "ext-ctype": "*"
+            },
+            "suggest": {
+                "ext-ctype": "For best performance"
+            },
+            "type": "library",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Ctype\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Gert de Pagter",
+                    "email": "BackEndTea@gmail.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill for ctype functions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "ctype",
+                "polyfill",
+                "portable"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.37.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-04-10T16:19:22+00:00"
+        },
+        {
+            "name": "symfony/yaml",
+            "version": "v7.4.23",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/yaml.git",
+                "reference": "1e601207ffe627a2e621faa9d661f1d32dcf1cec"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/1e601207ffe627a2e621faa9d661f1d32dcf1cec",
+                "reference": "1e601207ffe627a2e621faa9d661f1d32dcf1cec",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2",
+                "symfony/deprecation-contracts": "^2.5|^3",
+                "symfony/polyfill-ctype": "^1.8"
+            },
+            "conflict": {
+                "symfony/console": "<6.4"
+            },
+            "require-dev": {
+                "symfony/console": "^6.4|^7.0|^8.0"
+            },
+            "bin": [
+                "Resources/bin/yaml-lint"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Yaml\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Loads and dumps YAML files",
+            "homepage": "https://symfony.com",
+            "support": {
+                "source": "https://github.com/symfony/yaml/tree/v7.4.23"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-11-04T08:27:22+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {},
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-readline": "*"
+    },
+    "platform-dev": {},
+    "plugin-api-version": "2.9.0"
+}

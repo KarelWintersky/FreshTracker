@@ -1,80 +1,68 @@
 <?php
 
-use Arris\AppRouter;
-use FreshTracker\App;
-use FreshTracker\Controllers\ConfigController;
-use FreshTracker\Controllers\ProductsController;
-use FreshTracker\Controllers\ResponseController;
-use FreshTracker\Units\AccessControl;
+declare(strict_types=1);
 
-if (!defined("PATH_INSTALL")) { define("PATH_INSTALL", dirname(__DIR__)); }
-if (!defined("CONFIG_PATH")) { define("CONFIG_PATH", $_SERVER['APP_CONFIG'] ?? __DIR__ . '/../freshtracker.yml' ); };
-if (!defined("DATABASE_PATH")) { define("DATABASE_PATH", $_SERVER['APP_DATABASE'] ?? __DIR__ . '/../freshtracker.sqlite' ); };
+use FreshTracker\Access\ClientIp;
+use FreshTracker\Bootstrap\App;
+use FreshTracker\Http\HttpException;
+use FreshTracker\Http\JsonGuard;
+use FreshTracker\Http\Response;
+use FreshTracker\Http\Router;
 
-if (!defined("START_TIME")) { define("START_TIME", microtime(true)); }
+$root = dirname(__DIR__);
+$autoload = $root . '/vendor/autoload.php';
 
-if (is_file('/../vendor/autoload.php')) {
-    require_once __DIR__ . '/../vendor/autoload.php';
-} else {
-    require_once __DIR__ . '/../freshtracker.phar';
-}
-
-App::init([]);
-
-function json_error(string $message, int $code = 400): never {
-    http_response_code($code);
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => $message]);
+if (!is_file($autoload)) {
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['status' => 'error', 'message' => 'Composer dependencies are not installed']);
     exit;
 }
 
-$clientIP = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-$accessLevel = AccessControl::getAccessLevel(
-    $clientIP,
-    App::config('access.admin') ?? ['127.0.0.1', '::1'],
-    App::config('access.view') ?? ['0.0.0.0/0', '::/0'],
-);
-App::setAccessLevel($accessLevel);
-
-if ($accessLevel === 'none') {
-    json_error('Access denied', 403);
-}
-
-if ($accessLevel === 'view' && in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'], true)) {
-    json_error('Read-only access', 403);
-}
+require $autoload;
 
 try {
-    AppRouter::init(
-        logger: null,
-        allowEmptyHandlers: true,
-    );
-
-    AppRouter::addHandler(ProductsController::class, new ProductsController());
-    AppRouter::addHandler(ConfigController::class, new ConfigController());
-
-    AppRouter::group(prefix: '/api', callback: function () {
-
-        AppRouter::get('/config/', [ ConfigController::class, 'get']);
-
-        AppRouter::group(prefix: '/products', callback: function () {
-
-            AppRouter::get('/', [ ProductsController::class, 'getProducts']);
-            AppRouter::get('/{id}/', [ ProductsController::class, 'getProduct']);
-
-            AppRouter::post('/', [ ProductsController::class, 'createProduct']);
-
-            AppRouter::put('/{id}/', [ ProductsController::class, 'updateProduct']);
-            AppRouter::delete('/{id}/', [ ProductsController::class, 'deleteProduct']);
-
-            AppRouter::options('/', [ ResponseController::class, 'sendCORS']);
-        });
-    });
-
-    AppRouter::dispatch();
-
+    App::boot($root);
 } catch (Throwable $e) {
-    ResponseController::setError($e->getMessage(), $e->getCode());
-} finally {
-    ResponseController::send();
+    error_log('FreshTracker bootstrap failed: ' . $e->getMessage());
+    http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['status' => 'error', 'message' => 'Application bootstrap failed']);
+    exit;
+}
+
+$method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+$path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?? '/');
+
+try {
+    $ip = ClientIp::resolve((array) App::config('security.trusted_proxies', []));
+    $context = App::policy()->context($ip, App::session());
+    App::setContext($context, $ip);
+
+    if (str_starts_with($path, '/api/auth/')) {
+        JsonGuard::assertSameOrigin();
+    } else {
+        if (!$context->canView) {
+            throw new HttpException('Доступ закрыт', 403);
+        }
+
+        if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+            JsonGuard::assertSameOrigin();
+
+            if (!$context->canEdit) {
+                throw new HttpException('Только чтение', 403);
+            }
+        }
+    }
+
+    Router::dispatch();
+} catch (HttpException $e) {
+    Response::error($e->getMessage(), $e->status);
+} catch (\Arris\Exceptions\AppRouterNotFoundException $e) {
+    Response::error('Не найдено', 404);
+} catch (\Arris\Exceptions\AppRouterMethodNotAllowedException $e) {
+    Response::error('Метод не поддерживается', 405);
+} catch (Throwable $e) {
+    App::logger()->error('Unhandled API error', ['exception' => $e]);
+    Response::error(App::isDebug() ? $e->getMessage() : 'Внутренняя ошибка сервера', 500);
 }

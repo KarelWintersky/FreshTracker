@@ -4,76 +4,64 @@ declare(strict_types=1);
 
 namespace FreshTracker\Database;
 
+use Arris\Database\Connector;
 use PDO;
 use PDOStatement;
-use RuntimeException;
 
+/**
+ * Micro-DBAL on top of Arris\Database\Connector.
+ *
+ * The driver owns SQL dialect fragments (timestamps, day differences, schema)
+ * while the actual connection, statement proxying and slow-query stats come
+ * from Arris\Database.
+ */
 abstract class DatabaseDriver
 {
-    protected ?PDO $pdo = null;
+    protected Connector $connector;
     protected array $config;
 
-    public function __construct(array $config)
+    public function __construct(Connector $connector, array $config)
     {
+        $this->connector = $connector;
         $this->config = $config;
-        $this->pdo = $this->connect();
+        $this->configure();
     }
 
-    abstract protected function connect(): PDO;
+    abstract public function name(): string;
 
-    // === SQL fragment methods ===
+    /** Driver-level connection tweaks (SQLite PRAGMAs, etc.). */
+    protected function configure(): void
+    {
+    }
 
-    /** Current timestamp expression */
+    /** Current timestamp expression. */
     abstract public function sqlNow(): string;
 
-    /** Now minus N seconds */
-    abstract public function sqlNowMinusInterval(int $seconds): string;
-
-    /** Now plus N seconds */
-    abstract public function sqlNowPlusInterval(int $seconds): string;
-
-    /** COALESCE(col, now) for initial timestamp */
-    abstract public function sqlCoalesceNow(string $column): string;
-
-    /** Days remaining calculation from expiry_date column */
+    /** Whole days between the date column and today. 0 = expires today. */
     abstract public function sqlDaysRemaining(string $dateColumn): string;
 
-    /** NULLS FIRST for ORDER BY */
-    abstract public function sqlNullsFirst(string $column): string;
-
-    // === Statement helper methods ===
-
-    /** INSERT OR IGNORE equivalent */
-    abstract public function insertIgnore(string $table, array $data): int;
-
-    /** UPSERT: INSERT ... ON CONFLICT DO UPDATE */
-    abstract public function upsert(string $table, array $data, string $conflictColumn, array $set): void;
-
-    /** Schema: create tables */
+    /** Create the application schema if it does not exist. */
     abstract public function createTables(): void;
 
-    // === Generic PDO methods ===
+    /** @return array<string, array<string, mixed>> column name => metadata row */
+    abstract public function tableColumns(string $table): array;
 
-    abstract public function getDatabaseSize(): int;
-
-    public function getPdo(): PDO
+    public function connector(): Connector
     {
-        if ($this->pdo === null) {
-            throw new RuntimeException('Database connection is closed');
-        }
-        return $this->pdo;
+        return $this->connector;
+    }
+
+    public function pdo(): PDO
+    {
+        return $this->connector->pdo();
     }
 
     public function query(string $sql, array $params = []): PDOStatement
     {
-        if ($this->pdo === null) {
-            throw new RuntimeException('Database connection is closed');
-        }
+        $statement = $this->connector->prepare($sql);
+        $statement->execute($params);
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-
-        return $stmt;
+        return $statement;
     }
 
     public function fetchAll(string $sql, array $params = []): array
@@ -84,13 +72,15 @@ abstract class DatabaseDriver
     public function fetchOne(string $sql, array $params = []): ?array
     {
         $row = $this->query($sql, $params)->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+
+        return $row === false ? null : $row;
     }
 
     public function fetchValue(string $sql, array $params = []): mixed
     {
         $row = $this->query($sql, $params)->fetch(PDO::FETCH_NUM);
-        return $row[0] ?? null;
+
+        return $row === false ? null : ($row[0] ?? null);
     }
 
     public function execute(string $sql, array $params = []): int
@@ -101,44 +91,27 @@ abstract class DatabaseDriver
     public function insert(string $sql, array $params = []): int
     {
         $this->query($sql, $params);
-        return (int) $this->getPdo()->lastInsertId();
+
+        return (int) $this->connector->lastInsertId();
     }
 
     public function beginTransaction(): bool
     {
-        return $this->getPdo()->beginTransaction();
+        return $this->connector->beginTransaction();
     }
 
     public function commit(): bool
     {
-        return $this->getPdo()->commit();
+        return $this->connector->commit();
     }
 
     public function rollback(): bool
     {
-        return $this->getPdo()->rollBack();
+        return $this->connector->rollBack();
     }
 
     public function transaction(callable $callback): mixed
     {
-        $this->beginTransaction();
-        try {
-            $result = $callback();
-            $this->commit();
-            return $result;
-        } catch (\Throwable $e) {
-            $this->rollback();
-            throw $e;
-        }
-    }
-
-    public function close(): void
-    {
-        $this->pdo = null;
-    }
-
-    public function __destruct()
-    {
-        $this->close();
+        return $this->connector->transaction(fn () => $callback($this));
     }
 }
