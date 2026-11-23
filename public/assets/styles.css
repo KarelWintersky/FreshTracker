@@ -780,3 +780,37 @@ body.is-locked { overflow: hidden; }
         justify-content: flex-start;
     }
 }
+
+/* ── About modal ────────────────────────────────────────── */
+
+.brand { color: inherit; text-decoration: none; }
+.brand__title a { color: inherit; text-decoration: none; }
+
+.about__version {
+    margin: 2px 0 10px;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    color: var(--color-muted);
+}
+
+.about__list {
+    display: grid;
+    gap: 8px;
+    margin: 14px 0 18px;
+}
+
+.about__list div {
+    display: grid;
+    grid-template-columns: 70px minmax(0, 1fr);
+    gap: 10px;
+    font-size: 0.84rem;
+}
+
+.about__list dt { color: var(--color-muted); }
+.about__list dd { margin: 0; }
+
+@media (max-width: 380px) {
+    #btnRefresh { display: none; }
+    .brand__title { font-size: 1rem; }
+    .icon-btn { width: 34px; height: 34px; }
+}

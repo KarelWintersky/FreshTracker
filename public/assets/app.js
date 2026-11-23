@@ -746,6 +746,24 @@
             }
         });
 
+        const brand = $('#brandHome');
+        if (brand) {
+            brand.addEventListener('click', (event) => {
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    return;
+                }
+
+                event.preventDefault();
+                state.bucket = 'all';
+                state.typeFilter = '';
+                state.query = '';
+                ui.search.value = '';
+                switchView('active');
+                renderTypeFilter();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
         $('#btnAdd').addEventListener('click', () => openSheet(null));
         $('#btnTheme').addEventListener('click', () => window.Theme.toggle());
         $('#btnRefresh').addEventListener('click', () => refresh());

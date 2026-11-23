@@ -16,12 +16,15 @@
         <div class="header__inner">
             <div class="brand">
                 <a class="icon-btn back-link" href="./" title="К продуктам" aria-label="К продуктам">←</a>
-                <h1 class="brand__title">Типы продуктов</h1>
+                <h1 class="brand__title"><a href="./">Типы продуктов</a></h1>
             </div>
             <div class="header__actions">
                 <button class="icon-btn" id="btnTheme" type="button" title="Переключить тему" aria-label="Переключить тему">
                     <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM2 13h2a1 1 0 0 0 0-2H2a1 1 0 0 0 0 2zm18 0h2a1 1 0 0 0 0-2h-2a1 1 0 0 0 0 2zM11 2v2a1 1 0 0 0 2 0V2a1 1 0 0 0-2 0zm0 18v2a1 1 0 0 0 2 0v-2a1 1 0 0 0-2 0zM5.99 4.58a1 1 0 1 0-1.41 1.41l1.06 1.06A1 1 0 0 0 7.05 5.64L5.99 4.58zm12.37 12.37a1 1 0 1 0-1.41 1.41l1.06 1.06a1 1 0 0 0 1.41-1.41l-1.06-1.06zm1.06-10.96a1 1 0 1 0-1.41-1.41l-1.06 1.06a1 1 0 0 0 1.41 1.41l1.06-1.06zM7.05 18.36a1 1 0 1 0-1.41-1.41l-1.06 1.06a1 1 0 1 0 1.41 1.41l1.06-1.06z"/></svg>
                     <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 8.9 10.4A7 7 0 0 1 12 3z"/></svg>
+                </button>
+                <button class="icon-btn" id="btnAbout" type="button" title="О программе" aria-label="О программе">
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26A1.98 1.98 0 0 0 14 9a2 2 0 1 0-4 0H8a4 4 0 1 1 8 0c0 .88-.36 1.68-.93 2.25z"/></svg>
                 </button>
             </div>
         </div>
@@ -105,9 +108,27 @@
     </div>
 </div>
 
+<div class="modal" id="about" hidden>
+    <div class="modal__backdrop" data-close-about></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+        <h2 id="aboutTitle">FreshTracker</h2>
+        <p class="about__version">Версия <span id="aboutVersion">—</span></p>
+        <p class="modal__hint">Домашний учёт продуктов и контроль сроков годности: один общий запас, история «использовал / выкинул» и статистика отходов.</p>
+        <dl class="about__list">
+            <div><dt>Данные</dt><dd>SQLite, локальный файл</dd></div>
+            <div><dt>Доступ</dt><dd id="aboutAccess">—</dd></div>
+            <div><dt>Стек</dt><dd>PHP 8.2 · Arris µFramework · vanilla JS</dd></div>
+        </dl>
+        <div class="form__actions">
+            <button class="btn btn--primary" type="button" data-close-about>Закрыть</button>
+        </div>
+    </div>
+</div>
+
 <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
 
 <script src="assets/api.js"></script>
+<script src="assets/about.js"></script>
 <script src="assets/types.js"></script>
 </body>
 </html>

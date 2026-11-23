@@ -152,6 +152,9 @@ Writes require `Content-Type: application/json` and pass `Http\JsonGuard`
   with Cyrillic→Latin transliteration); the system slug `разное` is reserved.
 - `features.product_drafts` keeps an unfinished product form in `sessionStorage`
   across navigation to `/types.html`.
+- Clicking the brand returns to the product list (resets filters on the SPA);
+  the «?» button opens the About modal (`assets/about.js`), whose version comes
+  from `Config\Version` via `GET /api/config/`.
 
 ## Tests
 
