@@ -39,7 +39,7 @@ app/
   AppDatabase.php              facade over a DatabaseDriver
   Database/                    micro-DBAL: DatabaseDriver + SQLite/MySQL/PostgreSQL
   Migrations/Migrator.php      schema v1 + legacy rebuild (kg→g, is_deleted→status)
-  Domain/                      Weight, Expiry, ProductStatus, ProductValidator
+  Domain/                      Weight, Expiry, ProductStatus, ProductValidator, TypeManager
   Repositories/                ProductRepository, TypeRepository
   Access/                      AccessPolicy, AccessContext, EditSession, ClientIp, Throttle
   Http/                        Router, Response, Input, JsonGuard, HttpException
@@ -50,8 +50,10 @@ public/
   api.php                      front controller (boot, ACL, CSRF guard, dispatch)
   router.php                   dev router for `php -S`
   index.html                   SPA shell
+  types.html                   type-management page (local editors only)
   assets/{styles,themes}.css   layout + colour tokens (day/night)
   assets/{theme,api,app}.js    theme pre-paint, fetch wrapper, UI
+  assets/types.js              type CRUD page
 tests/run.php                  dependency-free test runner
 config.dist.yaml               documented config template
 ```
@@ -64,7 +66,7 @@ config.dist.yaml               documented config template
 Sections: `app` (theme, timezone, debug), `database` (driver/path/slow query),
 `access.local` (networks, visible, password), `access.public` (visible, password,
 editable), `security` (secret, trusted_proxies), `logging`, `defaults`,
-`validation`.
+`validation`, `features` (`product_drafts`).
 
 Access resolution (`Access\AccessPolicy::context`):
 - IP in `local.networks` → group `local`; `visible: false` denies everything;
@@ -114,7 +116,11 @@ Status codes: 200/201/400/401/403/404/409/415/422/429/500.
 | Method | Path |
 |---|---|
 | GET | `/api/config/` |
-| GET | `/api/types/` |
+| GET | `/api/types/` (with `product_count` / `active_count`) |
+| POST | `/api/types/` (local + can_edit) |
+| PUT | `/api/types/{id}/` (local + can_edit) |
+| DELETE | `/api/types/{id}/` (local + can_edit) |
+| POST | `/api/types/{id}/move` (local + can_edit) |
 | GET | `/api/products/?status=active\|history&type=&q=` |
 | POST | `/api/products/` |
 | GET/PUT/DELETE | `/api/products/{id}/` |
@@ -139,6 +145,12 @@ Writes require `Content-Type: application/json` and pass `Http\JsonGuard`
   form, password modal, toasts. Event delegation only, no inline handlers.
 - Weight is stored in grams; the form switches g/kg automatically.
 - Actions: «Использовал» / «Выкинул»; contextual primary button by status.
+- Type management lives on `/types.html`; the gear in the header and the
+  «+ тип» chips are shown only for `local` + `can_edit`. Deleting a type moves
+  all its products to the system type `разное` and prefixes names with
+  `[тип] `; `разное` is not deletable. Slugs are generated once and never change.
+- `features.product_drafts` keeps an unfinished product form in `sessionStorage`
+  across navigation to `/types.html`.
 
 ## Tests
 

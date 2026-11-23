@@ -7,5 +7,5 @@ namespace FreshTracker\Config;
 final class Version
 {
     /** Bumped with every release commit. */
-    public const VERSION = '0.4.8';
+    public const VERSION = '0.4.9';
 }

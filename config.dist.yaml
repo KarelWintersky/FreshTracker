@@ -56,3 +56,8 @@ validation:
   max_weight_g: 5000000
   max_threshold_days: 365
   max_name_length: 255
+
+features:
+  # Сохранять недозаполненную форму продукта в sessionStorage при переходе
+  # на страницу управления типами и восстанавливать при возврате.
+  product_drafts: false

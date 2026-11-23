@@ -4,6 +4,8 @@
     const $ = (selector, root = document) => root.querySelector(selector);
     const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
+    const DRAFT_KEY = 'ft-product-draft';
+
     const state = {
         config: null,
         types: [],
@@ -92,6 +94,68 @@
 
     function canEdit() {
         return Boolean(state.config && state.config.access && state.config.access.can_edit);
+    }
+
+    function canManageTypes() {
+        const access = (state.config && state.config.access) || {};
+        return access.group === 'local' && Boolean(access.can_edit);
+    }
+
+    function draftsEnabled() {
+        return Boolean(state.config && state.config.features && state.config.features.product_drafts);
+    }
+
+    function saveDraft() {
+        if (!draftsEnabled() || state.editing || ui.sheet.hidden) return;
+
+        const payload = parsePayload();
+        if (!payload.name && !payload.expiry_date && !payload.weight) return;
+
+        try {
+            sessionStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+        } catch (e) {
+            /* private mode */
+        }
+    }
+
+    function loadDraft() {
+        if (!draftsEnabled()) return null;
+
+        try {
+            const raw = sessionStorage.getItem(DRAFT_KEY);
+            if (!raw) return null;
+            const draft = JSON.parse(raw);
+            return draft && typeof draft === 'object' ? draft : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function clearDraft() {
+        try {
+            sessionStorage.removeItem(DRAFT_KEY);
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
+    function applyDraft(draft) {
+        if (draft.type && typeBySlug(draft.type)) {
+            selectFormType(draft.type);
+        }
+        if (typeof draft.name === 'string') {
+            $('#name').value = draft.name;
+        }
+        if (draft.weight !== undefined && draft.weight !== null && draft.weight !== '') {
+            $('#weight').value = draft.weight;
+        }
+        $('#weightUnit').value = draft.weight_unit === 'kg' ? 'kg' : 'g';
+        if (typeof draft.expiry_date === 'string' && draft.expiry_date) {
+            $('#expiryDate').value = draft.expiry_date;
+        }
+        if (draft.threshold_days) {
+            $('#threshold').value = draft.threshold_days;
+        }
     }
 
     function statusClass(product) {
@@ -335,14 +399,18 @@
         ui.typeFilter.innerHTML = chips.map((type) => `
             <button type="button" class="chip ${state.typeFilter === type.slug ? 'is-active' : ''}"
                     data-filter-type="${esc(type.slug)}">${esc(type.title)}</button>
-        `).join('');
+        `).join('') + (canManageTypes()
+            ? '<a class="chip chip--add" href="types.html" title="Управление типами">+ тип</a>'
+            : '');
     }
 
     function renderTypeChips() {
         ui.typeChips.innerHTML = state.types.map((type) => `
             <button type="button" class="chip ${state.selectedType === type.slug ? 'is-active' : ''}"
                     data-form-type="${esc(type.slug)}">${esc(type.title)}</button>
-        `).join('');
+        `).join('') + (canManageTypes()
+            ? '<a class="chip chip--add" href="types.html" title="Управление типами">+ тип</a>'
+            : '');
     }
 
     function renderAccess() {
@@ -351,6 +419,11 @@
 
         $('#btnAdd').hidden = !editable;
         $('#btnUnlock').hidden = editable || !access.password_scope;
+
+        const typesButton = $('#btnTypes');
+        if (typesButton) {
+            typesButton.hidden = !canManageTypes();
+        }
     }
 
     /* ── Data ────────────────────────────────────────────── */
@@ -408,6 +481,14 @@
         $('#expiryDate').value = product ? product.expiry_date : todayPlus(defaults ? defaults.default_expiry_days : 30);
         $('#threshold').value = product ? product.threshold_days : ((state.config.defaults && state.config.defaults.threshold_days) || 7);
 
+        if (!product) {
+            const draft = loadDraft();
+            if (draft) {
+                applyDraft(draft);
+                toast('Черновик восстановлен');
+            }
+        }
+
         ui.sheetTitle.textContent = product ? 'Изменить продукт' : 'Новый продукт';
         $('#submitBtn').textContent = product ? 'Сохранить' : 'Добавить';
         ui.formError.hidden = true;
@@ -417,7 +498,11 @@
         setTimeout(() => $('#name').focus(), 40);
     }
 
-    function closeSheet() {
+    function closeSheet(discardDraft = false) {
+        if (discardDraft) {
+            clearDraft();
+        }
+
         ui.sheet.hidden = true;
         document.body.classList.remove('is-locked');
         state.editing = null;
@@ -481,6 +566,7 @@
                 await API.create(payload);
             }
 
+            clearDraft();
             closeSheet();
             toast(isEdit ? 'Сохранено' : 'Продукт добавлен', 'success');
             await refresh();
@@ -532,6 +618,8 @@
             closeLogin();
             state.config = await API.config();
             renderAccess();
+            renderTypeFilter();
+            renderTypeChips();
             toast('Режим редактирования включён', 'success');
             await refresh();
         } catch (loginError) {
@@ -592,7 +680,7 @@
         document.addEventListener('click', (event) => {
             const closeSheetNode = event.target.closest('[data-close-sheet]');
             if (closeSheetNode) {
-                closeSheet();
+                closeSheet(true);
                 return;
             }
 
@@ -664,6 +752,9 @@
         $('#btnUnlock').addEventListener('click', () => needPassword());
 
         ui.form.addEventListener('submit', submitForm);
+        ui.form.addEventListener('input', saveDraft);
+        ui.form.addEventListener('change', saveDraft);
+        ui.form.addEventListener('click', saveDraft);
         ui.loginForm.addEventListener('submit', submitLogin);
 
         let timer = null;
@@ -678,7 +769,7 @@
 
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') return;
-            if (!ui.sheet.hidden) closeSheet();
+            if (!ui.sheet.hidden) closeSheet(true);
             if (!ui.login.hidden) closeLogin();
         });
     }

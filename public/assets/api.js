@@ -53,6 +53,13 @@
     window.API = {
         config: () => request('/config/'),
         types: () => request('/types/'),
+        createType: (data) => request('/types/', { method: 'POST', body: JSON.stringify(data) }),
+        updateType: (id, data) => request(`/types/${id}/`, { method: 'PUT', body: JSON.stringify(data) }),
+        deleteType: (id) => request(`/types/${id}/`, { method: 'DELETE' }),
+        moveType: (id, direction) => request(`/types/${id}/move`, {
+            method: 'POST',
+            body: JSON.stringify({ direction }),
+        }),
         products: (params) => request(`/products/${query(params)}`),
         create: (data) => request('/products/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => request(`/products/${id}/`, { method: 'PUT', body: JSON.stringify(data) }),

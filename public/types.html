@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="day">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f6f8fa">
+    <link rel="icon" href="data:,">
+    <title>Типы продуктов — FreshTracker</title>
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="stylesheet" href="assets/themes.css">
+    <script src="assets/theme.js"></script>
+</head>
+<body>
+<div class="app" id="app" hidden>
+    <header class="header">
+        <div class="header__inner">
+            <div class="brand">
+                <a class="icon-btn back-link" href="./" title="К продуктам" aria-label="К продуктам">←</a>
+                <h1 class="brand__title">Типы продуктов</h1>
+            </div>
+            <div class="header__actions">
+                <button class="icon-btn" id="btnTheme" type="button" title="Переключить тему" aria-label="Переключить тему">
+                    <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM2 13h2a1 1 0 0 0 0-2H2a1 1 0 0 0 0 2zm18 0h2a1 1 0 0 0 0-2h-2a1 1 0 0 0 0 2zM11 2v2a1 1 0 0 0 2 0V2a1 1 0 0 0-2 0zm0 18v2a1 1 0 0 0 2 0v-2a1 1 0 0 0-2 0zM5.99 4.58a1 1 0 1 0-1.41 1.41l1.06 1.06A1 1 0 0 0 7.05 5.64L5.99 4.58zm12.37 12.37a1 1 0 1 0-1.41 1.41l1.06 1.06a1 1 0 0 0 1.41-1.41l-1.06-1.06zm1.06-10.96a1 1 0 1 0-1.41-1.41l-1.06 1.06a1 1 0 0 0 1.41 1.41l1.06-1.06zM7.05 18.36a1 1 0 1 0-1.41-1.41l-1.06 1.06a1 1 0 1 0 1.41 1.41l1.06-1.06z"/></svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 8.9 10.4A7 7 0 0 1 12 3z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <p class="page-lead">
+            Типы используются для фильтра и подсказок срока годности.
+            «Разное» — системный тип: удалить его нельзя, при удалении другого типа
+            его продукты переезжают в «Разное», а к названию добавляется «[тип] ».
+        </p>
+
+        <div class="viewbar">
+            <span class="viewbar__hint" id="typeCount"></span>
+            <button class="btn btn--primary add-btn" id="btnAddType" type="button" aria-label="Добавить тип">
+                <span class="add-btn__icon" aria-hidden="true">+</span><span class="add-btn__text">Новый тип</span>
+            </button>
+        </div>
+
+        <div class="list" id="typeList" aria-live="polite"></div>
+    </main>
+</div>
+
+<div class="blocked" id="blocked" hidden>
+    <div class="blocked__card">
+        <span class="blocked__icon" aria-hidden="true">🔒</span>
+        <h2>Доступ закрыт</h2>
+        <p id="blockedText">Управление типами доступно только в локальной сети с правом редактирования.</p>
+        <p><a class="btn btn--ghost" href="./">Вернуться к продуктам</a></p>
+    </div>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+    <div class="sheet__backdrop" data-close-sheet></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+        <header class="sheet__header">
+            <h2 id="sheetTitle">Новый тип</h2>
+            <button class="icon-btn" type="button" data-close-sheet aria-label="Закрыть">✕</button>
+        </header>
+
+        <form id="typeForm" class="form" novalidate>
+            <input type="hidden" id="typeId" value="">
+
+            <label class="field">
+                <span class="field__label">Название</span>
+                <input class="input" id="title" name="title" required maxlength="128" autocomplete="off" placeholder="Например, Заморозка">
+                <span class="field__hint" id="slugHint" hidden></span>
+            </label>
+
+            <div class="field-row">
+                <label class="field">
+                    <span class="field__label">Срок по умолчанию, дней</span>
+                    <input class="input" id="expiryDays" name="default_expiry_days" type="number" min="1" max="3650" value="30" required>
+                </label>
+                <label class="field">
+                    <span class="field__label">Порог предупреждения, дней</span>
+                    <input class="input" id="thresholdDays" name="default_threshold_days" type="number" min="1" max="365" value="7" required>
+                </label>
+            </div>
+
+            <label class="field">
+                <span class="field__label">Вес по умолчанию, г (необязательно)</span>
+                <input class="input" id="weightG" name="default_weight_g" type="number" min="1" max="5000000" placeholder="500">
+            </label>
+
+            <p class="form__error" id="formError" hidden></p>
+
+            <div class="form__actions">
+                <button class="btn btn--ghost" type="button" data-close-sheet>Отмена</button>
+                <button class="btn btn--primary" type="submit" id="submitBtn">Добавить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+<script src="assets/api.js"></script>
+<script src="assets/types.js"></script>
+</body>
+</html>
