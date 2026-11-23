@@ -60,7 +60,7 @@ phpunit.xml                    PHPUnit config (tests/, source app/)
 freshtracker.dist.yaml         documented config template
 box.json                       Box config (app + vendor, no public/)
 build.sh                       Docker + Box PHAR builder (make phar)
-tools/build-phar.php           dependency-free PHAR builder (make phar-local)
+build-phar-local.php           dependency-free PHAR builder (make phar-local)
 ```
 
 ## Config
@@ -181,7 +181,7 @@ There is no separate CLI. Migrations run on boot.
 
 `make phar` builds `freshtracker.phar` from `app/` + `vendor/` via Docker + Box
 (`build.sh`, `box.json`); the container provides PHP 8.3 and sodium. `make
-phar-local` is the dependency-free fallback (`tools/build-phar.php`,
+phar-local` is the dependency-free fallback (`build-phar-local.php`,
 `phar.readonly=0`). Both install `--no-dev` for the build and restore dev deps
 afterwards. A minimal production deploy needs only `public/`, the PHAR,
 `freshtracker.yaml` and the SQLite file.
@@ -213,3 +213,4 @@ port is planned in `TODO_GOLANG.md`.
   preserved as `tests/legacy_tests.php`.
 - 0.4.15 — web PHAR restored (`box.json`, `make phar`, `api.php` fallback
   to `freshtracker.phar` when `vendor/` is absent).
+- 0.4.16 — local PHAR builder moved to `build-phar-local.php` (root); paths updated.

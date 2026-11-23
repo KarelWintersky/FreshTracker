@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Build freshtracker.phar from app/ + vendor/ without external tools.
  *
- * Usage: php -d phar.readonly=0 tools/build-phar.php
+ * Usage: php -d phar.readonly=0 build-phar-local.php
  */
 
 if ((int) ini_get('phar.readonly') === 1) {
@@ -13,7 +13,7 @@ if ((int) ini_get('phar.readonly') === 1) {
     exit(1);
 }
 
-$root = dirname(__DIR__);
+$root = __DIR__;
 $output = $root . '/freshtracker.phar';
 
 if (is_file($output) && !unlink($output)) {

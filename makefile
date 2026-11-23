@@ -47,7 +47,7 @@ phar-local:	##@build Build production PHAR without Docker (built-in builder)
 	@set -e; \
 	trap 'composer install >/dev/null 2>&1' EXIT; \
 	composer install --no-dev --optimize-autoloader --classmap-authoritative; \
-	php -d phar.readonly=0 tools/build-phar.php; \
+	php -d phar.readonly=0 build-phar-local.php; \
 	ls -lh freshtracker.phar
 
 update:		##@build Update project from GIT
