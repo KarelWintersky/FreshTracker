@@ -1,5 +1,5 @@
-# FreshTracker configuration.
-# Copy to config.yaml (gitignored) and adjust for your installation.
+# FreshTracker configuration template.
+# Скопируйте в freshtracker.yaml (gitignored) и отредактируйте.
 
 app:
   name: FreshTracker

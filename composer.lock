@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "109ec03823042700e5c124868c3b7b73",
+    "content-hash": "2b93d0f2077b6f73543ef3d5b498ab7d",
     "packages": [
         {
             "name": "karelwintersky/arris.config",
@@ -278,59 +278,6 @@
                 "source": "https://github.com/ArrisFramework/Arris.AppRouter/tree/2.4.3"
             },
             "time": "2026-09-08T14:27:43+00:00"
-        },
-        {
-            "name": "karelwintersky/arris.toolkit.cli-console",
-            "version": "1.6.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/ArrisFramework/Arris.Toolkit.CLIConsole.git",
-                "reference": "04248df1afe5e07faef087aa2ad6aad3f3a49adf"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/ArrisFramework/Arris.Toolkit.CLIConsole/zipball/04248df1afe5e07faef087aa2ad6aad3f3a49adf",
-                "reference": "04248df1afe5e07faef087aa2ad6aad3f3a49adf",
-                "shasum": ""
-            },
-            "require": {
-                "ext-mbstring": "*",
-                "ext-readline": "*",
-                "php": "^8.2"
-            },
-            "suggest": {
-                "karelwintersky/arris": "Arris µFramework",
-                "laravel/prompts": "Laravel Prompts"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Arris\\Toolkit\\": [
-                        "interfaces",
-                        "sources"
-                    ]
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Karel Wintersky",
-                    "email": "karel.wintersky@gmail.com"
-                }
-            ],
-            "description": "Arris µFramework - CLIConsole helper",
-            "keywords": [
-                "arris",
-                "console"
-            ],
-            "support": {
-                "issues": "https://github.com/ArrisFramework/Arris.Toolkit.CLIConsole/issues",
-                "source": "https://github.com/ArrisFramework/Arris.Toolkit.CLIConsole/tree/1.6.0"
-            },
-            "time": "2026-10-28T03:21:53+00:00"
         },
         {
             "name": "karelwintersky/arris.toolkit.firewall",
@@ -671,8 +618,7 @@
         "php": "^8.2",
         "ext-json": "*",
         "ext-mbstring": "*",
-        "ext-pdo": "*",
-        "ext-readline": "*"
+        "ext-pdo": "*"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"

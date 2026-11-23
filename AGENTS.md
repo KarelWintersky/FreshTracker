@@ -8,7 +8,7 @@ Technical reference for the agent. Keeps the state of the code, not a changelog.
 - PHP 8.2+, SQLite, YAML config, vanilla JS (no build step).
 - Not multi-user: access is decided by network (`local`) or by a password gate
   (`public`) with `editable: always | password | never`.
-- Entry points: `public/api.php` (JSON API), `public/index.html` (SPA), `bin/ft` (CLI).
+- Entry points: `public/api.php` (JSON API), `public/index.html` (SPA).
 - Namespace `FreshTracker\` → `app/` (PSR-4).
 
 ## Dependencies (composer)
@@ -16,7 +16,7 @@ Technical reference for the agent. Keeps the state of the code, not a changelog.
 Standalone Arris packages, **no `karelwintersky/arris` core**:
 
 `arris.config`, `arris.router`, `arris.logger`, `arris.database`, `arris.request`,
-`arris.toolkit.firewall`, `arris.toolkit.cli-console`, plus `symfony/yaml` and `psr/log`.
+`arris.toolkit.firewall`, plus `symfony/yaml` and `psr/log`.
 
 Integration notes:
 - `Arris\Database\Connector` is lazy and PDO-compatible; `app/Database/*` is a
@@ -45,7 +45,6 @@ app/
   Http/                        Router, Response, Input, JsonGuard, HttpException
   Controllers/                 Config, Types, Products, Stats, Auth
   Support/Secret.php           HMAC secret (env → config → var/secret)
-bin/ft                         CLI: migrate, stats, check, version
 public/
   api.php                      front controller (boot, ACL, CSRF guard, dispatch)
   router.php                   dev router for `php -S`
@@ -55,13 +54,15 @@ public/
   assets/{theme,api,app}.js    theme pre-paint, fetch wrapper, UI
   assets/types.js              type CRUD page
 tests/run.php                  dependency-free test runner
-config.dist.yaml               documented config template
+freshtracker.dist.yaml         documented config template
 ```
 
 ## Config
 
-`config.yaml` (or legacy `freshtracker.yml`) is optional; missing keys come from
-`Config\Defaults`. `APP_CONFIG`, `APP_DATABASE`, `APP_SECRET` env vars override.
+Config priority: `APP_CONFIG` (must exist) → `freshtracker.yaml` in the project
+root → `Config\Defaults`. `APP_DATABASE` overrides the SQLite path and
+`APP_SECRET` overrides the cookie secret. `config.yaml` and `freshtracker.yml`
+are no longer read.
 
 Sections: `app` (theme, timezone, debug), `database` (driver/path/slow query),
 `access.local` (networks, visible, password), `access.public` (visible, password,
@@ -104,7 +105,7 @@ login_attempts (id, ip, attempted_at)
   expiry date itself is `0` (not negative).
 - History = `status <> 'active'`; no event table. `expiry_days_at_close` is a
   snapshot for waste analytics.
-- `Migrator::ensure()` runs on boot and from `bin/ft migrate`; it is idempotent.
+- `Migrator::ensure()` runs on every boot; it is idempotent and there is no separate CLI.
   Legacy DBs are rebuilt in one transaction (only `types`/`login_attempts` are
   created before the rebuild — product indexes reference `status`).
 
@@ -166,11 +167,10 @@ Covers: Weight, Expiry (date-only boundaries), ProductStatus, AccessPolicy matri
 (local/public/passwords/IPv6), legacy migration and idempotency on in-memory SQLite.
 No PHPUnit required.
 
-## PHAR
+## CLI / PHAR
 
-`make phar` builds a CLI-only `freshtracker.phar` (`main: bin/ft`, stub enabled).
-The web app always runs from source; `public/api.php` never auto-loads a PHAR.
-In `bin/ft`, `Phar::running()` selects the external install dir for config/DB/logs.
+There is no separate CLI or PHAR build. Migrations run on boot; the web app always
+runs from source. (A Go single-binary port is planned in `TODO_GOLANG.md`.)
 
 ## Status / TODO
 
@@ -179,6 +179,8 @@ In `bin/ft`, `Phar::running()` selects the external install dir for config/DB/lo
 - `public/_version` is a build artifact; source of truth is `Config\Version`.
 - Possible next steps: per-type thresholds in the UI, weight units beyond g/kg,
   CSV export of the history.
+- Go port plan: `TODO_GOLANG.md`; branch `golang`, version `1.x.x/Go`,
+  branch-specific README.
 
 ## History
 
@@ -187,3 +189,6 @@ In `bin/ft`, `Phar::running()` selects the external install dir for config/DB/lo
 - 0.4.0 — rewrite: standalone Arris packages, DBAL over arris.database, grams,
   used/disposed statuses, history/stats, day/night themes, password gate,
   CLI, tests, PHAR as a separate CLI artifact.
+- 0.4.13 — config is `freshtracker.yaml` (`APP_CONFIG` → file → defaults);
+  CLI (`bin/ft`), the CLI-only PHAR and the `cli-console` dependency removed;
+  README rewritten; `TODO_GOLANG.md` added.

@@ -1,5 +1,5 @@
 #!/usr/bin/make
-.PHONY: help install update build phar test migrate serve dchv dchr dchn
+.PHONY: help install update build test serve dchv dchr dchn
 
 PACKAGE_NAME = freshtracker
 PROJECT = freshtracker
@@ -11,7 +11,7 @@ install: ##@system Install package. Don't run it manually!!!
 	@echo Installing...
 	install -d $(PATH_PROJECT)
 	cp -r public $(PATH_PROJECT)/
-	cp freshtracker.phar $(PATH_PROJECT)/
+	cp freshtracker.dist.yaml $(PATH_PROJECT)/
 	install -d $(PATH_PROJECT)/logs
 
 	@# Get version info
@@ -27,16 +27,12 @@ install: ##@system Install package. Don't run it manually!!!
 build:		##@build Build project
 	@dh_clean
 	@echo Building project
-	@composer install && \
-	box compile --config=box.json
+	@composer install --no-dev --optimize-autoloader
 	@dpkg-buildpackage -rfakeroot --no-sign
 	@dh_clean
 
 test:		##@development Run the test suite
 	@php tests/run.php
-
-migrate:	##@development Create or upgrade the database schema
-	@php bin/ft migrate
 
 serve:		##@development Run the development server on 127.0.0.1:8080
 	@php -S 127.0.0.1:8080 -t public public/router.php
@@ -44,9 +40,6 @@ serve:		##@development Run the development server on 127.0.0.1:8080
 update:		##@build Update project from GIT
 	@echo Updating project from GIT
 	git pull --no-rebase
-
-phar:	##@build Compile PHAR file
-	@bash build.sh
 
 help:
 	@perl -e '$(HELP_ACTION)' $(MAKEFILE_LIST)

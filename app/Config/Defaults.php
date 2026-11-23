@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace FreshTracker\Config;
 
 /**
- * Application defaults. Values from config.yaml override these keys.
+ * Application defaults. Values from freshtracker.yaml override these keys.
  * `null` in a config file removes the key (Arris\AppConfig semantics).
  */
 final class Defaults

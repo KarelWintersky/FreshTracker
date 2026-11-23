@@ -37,17 +37,15 @@ final class App
     {
         $this->root = $root;
 
-        $configFile = getenv('APP_CONFIG');
-        $configFile = is_string($configFile) && $configFile !== ''
-            ? $configFile
-            : $root . '/config.yaml';
+        $envConfig = getenv('APP_CONFIG');
 
-        $files = ['?' . $configFile];
-        $legacy = $root . '/freshtracker.yml';
-
-        // Legacy config is used only when no explicit config file is present.
-        if ($configFile === $root . '/config.yaml' && !is_file($configFile) && is_file($legacy)) {
-            $files[] = '?' . $legacy;
+        if (is_string($envConfig) && $envConfig !== '') {
+            if (!is_file($envConfig)) {
+                throw new RuntimeException("Config file not found: {$envConfig}");
+            }
+            $files = [$envConfig];
+        } else {
+            $files = ['?' . $root . '/freshtracker.yaml'];
         }
 
         $this->config = new AppConfig($files, Defaults::all());

@@ -2,9 +2,7 @@
 /vendor/
 
 # Runtime data and local configuration
-/config.yaml
-/config.local.yaml
-/freshtracker.yml
+/freshtracker.yaml
 /freshtracker.sqlite
 /freshtracker.sqlite-shm
 /freshtracker.sqlite-wal
