@@ -399,9 +399,7 @@
         ui.typeFilter.innerHTML = chips.map((type) => `
             <button type="button" class="chip ${state.typeFilter === type.slug ? 'is-active' : ''}"
                     data-filter-type="${esc(type.slug)}">${esc(type.title)}</button>
-        `).join('') + (canManageTypes()
-            ? '<a class="chip chip--add" href="types.html" title="Управление типами">+ тип</a>'
-            : '');
+        `).join('');
     }
 
     function renderTypeChips() {

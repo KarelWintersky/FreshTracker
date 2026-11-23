@@ -146,7 +146,7 @@ Writes require `Content-Type: application/json` and pass `Http\JsonGuard`
 - Weight is stored in grams; the form switches g/kg automatically.
 - Actions: «Использовал» / «Выкинул»; contextual primary button by status.
 - Type management lives on `/types.html`; the gear in the header and the
-  «+ тип» chips are shown only for `local` + `can_edit`. Deleting a type moves
+  «+ тип» chip in the product form is shown only for `local` + `can_edit`. Deleting a type moves
   all its products to the system type `разное` and prefixes names with
   `[тип] `; `разное` is not deletable. Slugs are editable (manual or generated
   with Cyrillic→Latin transliteration); the system slug `разное` is reserved.
