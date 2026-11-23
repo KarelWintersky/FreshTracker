@@ -10,8 +10,11 @@ use FreshTracker\Access\EditSession;
 use FreshTracker\AppDatabase;
 use FreshTracker\Domain\Expiry;
 use FreshTracker\Domain\ProductStatus;
+use FreshTracker\Domain\TypeManager;
 use FreshTracker\Domain\Weight;
+use FreshTracker\Http\HttpException;
 use FreshTracker\Migrations\Migrator;
+use FreshTracker\Repositories\TypeRepository;
 use Psr\Log\NullLogger;
 
 $failures = 0;
@@ -289,6 +292,116 @@ test('days_remaining compares dates, not timestamps', function (): void {
 
     $days = $db->fetchValue('SELECT ' . $db->sqlDaysRemaining('expiry_date') . ' FROM products');
     same(0, (int) $days);
+});
+
+echo "Types\n";
+
+test('type create generates a unique slug', function (): void {
+    $db = new AppDatabase(['driver' => 'sqlite', 'path' => ':memory:']);
+    (new Migrator($db))->ensure();
+    $manager = new TypeManager($db);
+
+    $first = $manager->create([
+        'title' => 'Заморозка',
+        'default_expiry_days' => 180,
+        'default_threshold_days' => 10,
+        'default_weight_g' => 500,
+    ]);
+
+    same('заморозка', $first['slug']);
+    same('Заморозка', $first['title']);
+    same(180, (int) $first['default_expiry_days']);
+
+    $second = $manager->create(['title' => 'Заморозка!']);
+    same('заморозка_2', $second['slug']);
+});
+
+test('type titles are unique case-insensitively', function (): void {
+    $db = new AppDatabase(['driver' => 'sqlite', 'path' => ':memory:']);
+    (new Migrator($db))->ensure();
+    $manager = new TypeManager($db);
+
+    $manager->create(['title' => 'Заморозка']);
+
+    try {
+        $manager->create(['title' => 'заморозка']);
+        throw new RuntimeException('duplicate title was accepted');
+    } catch (HttpException $e) {
+        same(422, $e->status);
+    }
+});
+
+test('the system type cannot be deleted', function (): void {
+    $db = new AppDatabase(['driver' => 'sqlite', 'path' => ':memory:']);
+    (new Migrator($db))->ensure();
+    $types = new TypeRepository($db);
+    $system = $types->findBySlug(TypeManager::SYSTEM_SLUG);
+
+    try {
+        (new TypeManager($db))->delete((int) $system['id']);
+        throw new RuntimeException('system type was deleted');
+    } catch (HttpException $e) {
+        same(409, $e->status);
+    }
+});
+
+test('deleting a type moves products and prefixes their names', function (): void {
+    $db = new AppDatabase(['driver' => 'sqlite', 'path' => ':memory:']);
+    (new Migrator($db))->ensure();
+    $types = new TypeRepository($db);
+    $krupy = $types->findBySlug('крупы');
+    $fallback = $types->findBySlug(TypeManager::SYSTEM_SLUG);
+
+    $db->execute(
+        "INSERT INTO products (name, type_id, weight_g, expiry_date, threshold_days, status, created_at, updated_at)
+         VALUES ('Гречка', ?, 900, '2026-12-01', 7, 'active', datetime('now'), datetime('now'))",
+        [(int) $krupy['id']]
+    );
+    $db->execute(
+        "INSERT INTO products (name, type_id, weight_g, expiry_date, threshold_days, status, created_at, updated_at)
+         VALUES ('[Крупы] Мука', ?, 1000, '2026-12-01', 7, 'active', datetime('now'), datetime('now'))",
+        [(int) $krupy['id']]
+    );
+
+    $result = (new TypeManager($db))->delete((int) $krupy['id']);
+
+    same(2, $result['moved_products']);
+    same(null, $types->findBySlug('крупы'));
+
+    $rows = $db->fetchAll('SELECT name, type_id FROM products ORDER BY id ASC');
+    same('[Крупы] Гречка', $rows[0]['name']);
+    same('[Крупы] Мука', $rows[1]['name'], 'already prefixed name must not get a second prefix');
+    same((int) $fallback['id'], (int) $rows[0]['type_id']);
+    same((int) $fallback['id'], (int) $rows[1]['type_id']);
+});
+
+test('types can be reordered', function (): void {
+    $db = new AppDatabase(['driver' => 'sqlite', 'path' => ':memory:']);
+    (new Migrator($db))->ensure();
+    $types = new TypeRepository($db);
+    $manager = new TypeManager($db);
+
+    $before = $types->orderedIds();
+    same(true, $manager->move($before[1], 'up'));
+    $after = $types->orderedIds();
+
+    same($before[1], $after[0]);
+    same($before[0], $after[1]);
+
+    same(false, $manager->move($after[0], 'up'), 'moving the first item up is a no-op');
+});
+
+test('unknown move direction is rejected', function (): void {
+    $db = new AppDatabase(['driver' => 'sqlite', 'path' => ':memory:']);
+    (new Migrator($db))->ensure();
+    $types = new TypeRepository($db);
+
+    try {
+        (new TypeManager($db))->move($types->orderedIds()[0], 'left');
+        throw new RuntimeException('unknown direction was accepted');
+    } catch (HttpException $e) {
+        same(422, $e->status);
+    }
 });
 
 echo "\n" . ($passed + $failures) . " tests, {$passed} passed, {$failures} failed\n";

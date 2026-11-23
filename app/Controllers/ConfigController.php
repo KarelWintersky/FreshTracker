@@ -32,6 +32,9 @@ final class ConfigController
             'defaults' => [
                 'threshold_days' => (int) App::config('defaults.threshold_days', 7),
             ],
+            'features' => [
+                'product_drafts' => (bool) App::config('features.product_drafts', false),
+            ],
             'units' => [
                 'weight' => ['g', 'kg'],
             ],

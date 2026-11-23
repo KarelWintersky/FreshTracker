@@ -31,6 +31,15 @@ final class Router
             AppRouter::get('/types', [TypesController::class, 'index']);
             AppRouter::get('/types/', [TypesController::class, 'index']);
 
+            AppRouter::post('/types', [TypesController::class, 'store']);
+            AppRouter::post('/types/', [TypesController::class, 'store']);
+            AppRouter::put('/types/{id}', [TypesController::class, 'update']);
+            AppRouter::put('/types/{id}/', [TypesController::class, 'update']);
+            AppRouter::delete('/types/{id}', [TypesController::class, 'destroy']);
+            AppRouter::delete('/types/{id}/', [TypesController::class, 'destroy']);
+            AppRouter::post('/types/{id}/move', [TypesController::class, 'move']);
+            AppRouter::post('/types/{id}/move/', [TypesController::class, 'move']);
+
             AppRouter::get('/stats', [StatsController::class, 'index']);
             AppRouter::get('/stats/', [StatsController::class, 'index']);
 

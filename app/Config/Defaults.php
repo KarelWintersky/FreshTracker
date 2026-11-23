@@ -47,6 +47,11 @@ final class Defaults
             'defaults' => [
                 'threshold_days' => 7,
             ],
+            'features' => [
+                // Keep an unfinished product form in sessionStorage across
+                // navigation to the type-management page.
+                'product_drafts' => false,
+            ],
             'validation' => [
                 'min_weight_g'          => 1,
                 'max_weight_g'          => 5_000_000,
