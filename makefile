@@ -1,5 +1,5 @@
 #!/usr/bin/make
-.PHONY: help install update build test serve dchv dchr dchn
+.PHONY: help install update build test test-legacy serve dchv dchr dchn
 
 PACKAGE_NAME = freshtracker
 PROJECT = freshtracker
@@ -31,8 +31,11 @@ build:		##@build Build project
 	@dpkg-buildpackage -rfakeroot --no-sign
 	@dh_clean
 
-test:		##@development Run the test suite
-	@php tests/run.php
+test:		##@development Run PHPUnit tests
+	@php vendor/bin/phpunit
+
+test-legacy:	##@development Run the dependency-free legacy test runner
+	@php tests/legacy_tests.php
 
 serve:		##@development Run the development server on 127.0.0.1:8080
 	@php -S 127.0.0.1:8080 -t public public/router.php

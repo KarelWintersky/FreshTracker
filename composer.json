@@ -38,6 +38,10 @@
         "sort-packages": true
     },
     "scripts": {
-        "test": "@php tests/run.php"
+        "test": "@php vendor/bin/phpunit",
+        "test-legacy": "@php tests/legacy_tests.php"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
     }
 }

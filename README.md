@@ -29,6 +29,7 @@
 - Standalone-пакеты Arris: `arris.config`, `arris.router`, `arris.logger`,
   `arris.database`, `arris.request`, `arris.toolkit.firewall`.
 - Frontend: vanilla JS и CSS custom properties, без сборки.
+- PHPUnit 11 — только для разработки.
 
 Ядро `karelwintersky/arris` не используется.
 
@@ -217,15 +218,21 @@ validation:
 ## Тесты
 
 ```bash
-make test        # или php tests/run.php
+composer install
+make test                  # PHPUnit 11
+make test-legacy           # старый раннер без dev-зависимостей
 ```
 
-33 теста без внешних зависимостей: вес, даты, статусы, матрица доступа, IPv4/IPv6,
-CRUD типов, миграция старой схемы и идемпотентность.
+PHPUnit-набор: 34 теста — вес, даты, статусы, матрица доступа (local/public,
+пароли, IPv6), CRUD типов, миграция старой схемы и идемпотентность. Можно
+запускать точечно: `vendor/bin/phpunit --filter TypeManager`.
+
+`tests/legacy_tests.php` — прежний самописный раннер на 33 теста; оставлен как
+независимый от Composer-dev референс и для быстрой проверки без PHPUnit.
 
 ## Версия и ветки
 
-Текущая версия — `0.4.13`. Источник версии — `app/Config/Version.php`; она же
+Текущая версия — `0.4.14`. Источник версии — `app/Config/Version.php`; она же
 показывается в «О программе». Релизные теги — по мере готовности.
 
 Разработка Go-версии (один бинарник: веб-сервер, SQLite, роутинг, встроенный

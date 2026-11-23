@@ -17,6 +17,7 @@ Standalone Arris packages, **no `karelwintersky/arris` core**:
 
 `arris.config`, `arris.router`, `arris.logger`, `arris.database`, `arris.request`,
 `arris.toolkit.firewall`, plus `symfony/yaml` and `psr/log`.
+`require-dev`: `phpunit/phpunit ^11.5`.
 
 Integration notes:
 - `Arris\Database\Connector` is lazy and PDO-compatible; `app/Database/*` is a
@@ -53,7 +54,9 @@ public/
   assets/{styles,themes}.css   layout + colour tokens (day/night)
   assets/{theme,api,app}.js    theme pre-paint, fetch wrapper, UI
   assets/types.js              type CRUD page
-tests/run.php                  dependency-free test runner
+tests/                         PHPUnit suite (+ Support/DatabaseTestCase)
+tests/legacy_tests.php         dependency-free legacy runner
+phpunit.xml                    PHPUnit config (tests/, source app/)
 freshtracker.dist.yaml         documented config template
 ```
 
@@ -160,12 +163,14 @@ Writes require `Content-Type: application/json` and pass `Http\JsonGuard`
 ## Tests
 
 ```bash
-php tests/run.php   # or make test
+make test          # PHPUnit 11 (vendor/bin/phpunit)
+make test-legacy   # tests/legacy_tests.php, no dev dependencies
 ```
 
-Covers: Weight, Expiry (date-only boundaries), ProductStatus, AccessPolicy matrix
-(local/public/passwords/IPv6), legacy migration and idempotency on in-memory SQLite.
-No PHPUnit required.
+PHPUnit classes: `WeightTest`, `ExpiryTest`, `ProductStatusTest`,
+`AccessPolicyTest`, `TypeManagerTest`, `MigrationTest`; shared in-memory DB setup
+in `Tests\Support\DatabaseTestCase`. Covers the same behaviors as the legacy
+runner (34 vs 33 tests) plus PHPUnit reporting and filters.
 
 ## CLI / PHAR
 
@@ -192,3 +197,5 @@ runs from source. (A Go single-binary port is planned in `TODO_GOLANG.md`.)
 - 0.4.13 — config is `freshtracker.yaml` (`APP_CONFIG` → file → defaults);
   CLI (`bin/ft`), the CLI-only PHAR and the `cli-console` dependency removed;
   README rewritten; `TODO_GOLANG.md` added.
+- 0.4.14 — PHPUnit 11 added; tests converted to classes; `tests/run.php`
+  preserved as `tests/legacy_tests.php`.
