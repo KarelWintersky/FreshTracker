@@ -471,6 +471,20 @@ svg { display: block; }
     background: var(--color-surface-2);
 }
 
+.input-group .input--suffix-btn {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 8px 14px;
+    border-left: 0;
+    border-radius: 0 10px 10px 0;
+    background: var(--color-surface-2);
+    white-space: nowrap;
+}
+
+.input-group .input--suffix-btn:hover {
+    background: var(--color-surface);
+}
+
 .quick { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .quick__btn {
@@ -652,6 +666,7 @@ svg { display: block; }
     .item__name { font-size: 0.96rem; }
     .add-btn { width: 42px; min-height: 42px; padding: 0; }
     .add-btn__text { display: none; }
+    .input-group .input--suffix-btn { padding: 8px 10px; font-size: 0.78rem; }
 }
 
 /* ── Small additions ────────────────────────────────────── */

@@ -308,12 +308,69 @@ test('type create generates a unique slug', function (): void {
         'default_weight_g' => 500,
     ]);
 
-    same('заморозка', $first['slug']);
+    same('zamorozka', $first['slug']);
     same('Заморозка', $first['title']);
     same(180, (int) $first['default_expiry_days']);
 
     $second = $manager->create(['title' => 'Заморозка!']);
-    same('заморозка_2', $second['slug']);
+    same('zamorozka_2', $second['slug']);
+});
+
+test('type slug can be set manually and is normalized', function (): void {
+    $db = new AppDatabase(['driver' => 'sqlite', 'path' => ':memory:']);
+    (new Migrator($db))->ensure();
+    $manager = new TypeManager($db);
+
+    $type = $manager->create(['title' => 'Фрукты', 'slug' => 'Fruits!']);
+    same('fruits', $type['slug']);
+
+    $cyrillic = $manager->create(['title' => 'Овощи', 'slug' => 'Овощи']);
+    same('овощи', $cyrillic['slug']);
+});
+
+test('manual slug must be unique', function (): void {
+    $db = new AppDatabase(['driver' => 'sqlite', 'path' => ':memory:']);
+    (new Migrator($db))->ensure();
+    $manager = new TypeManager($db);
+
+    $manager->create(['title' => 'Фрукты', 'slug' => 'fruits']);
+
+    try {
+        $manager->create(['title' => 'Ягоды', 'slug' => 'Fruits']);
+        throw new RuntimeException('duplicate slug was accepted');
+    } catch (HttpException $e) {
+        same(422, $e->status);
+    }
+});
+
+test('type slug can be changed on update', function (): void {
+    $db = new AppDatabase(['driver' => 'sqlite', 'path' => ':memory:']);
+    (new Migrator($db))->ensure();
+    $manager = new TypeManager($db);
+
+    $type = $manager->create(['title' => 'Ягоды']);
+    $updated = $manager->update((int) $type['id'], ['title' => 'Ягоды', 'slug' => 'berries']);
+
+    same('berries', $updated['slug']);
+});
+
+test('system type slug is immutable', function (): void {
+    $db = new AppDatabase(['driver' => 'sqlite', 'path' => ':memory:']);
+    (new Migrator($db))->ensure();
+    $types = new TypeRepository($db);
+    $manager = new TypeManager($db);
+    $system = $types->findBySlug(TypeManager::SYSTEM_SLUG);
+
+    try {
+        $manager->update((int) $system['id'], ['title' => 'Разное', 'slug' => 'other']);
+        throw new RuntimeException('system slug was changed');
+    } catch (HttpException $e) {
+        same(422, $e->status);
+    }
+
+    $renamed = $manager->update((int) $system['id'], ['title' => 'Прочее', 'slug' => TypeManager::SYSTEM_SLUG]);
+    same('разное', $renamed['slug']);
+    same('Прочее', $renamed['title']);
 });
 
 test('type titles are unique case-insensitively', function (): void {

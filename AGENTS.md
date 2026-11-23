@@ -148,7 +148,8 @@ Writes require `Content-Type: application/json` and pass `Http\JsonGuard`
 - Type management lives on `/types.html`; the gear in the header and the
   «+ тип» chips are shown only for `local` + `can_edit`. Deleting a type moves
   all its products to the system type `разное` and prefixes names with
-  `[тип] `; `разное` is not deletable. Slugs are generated once and never change.
+  `[тип] `; `разное` is not deletable. Slugs are editable (manual or generated
+  with Cyrillic→Latin transliteration); the system slug `разное` is reserved.
 - `features.product_drafts` keeps an unfinished product form in `sessionStorage`
   across navigation to `/types.html`.
 

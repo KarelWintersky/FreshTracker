@@ -114,9 +114,10 @@ final class TypeRepository
     {
         $this->db->execute(
             'UPDATE types
-             SET title = ?, default_expiry_days = ?, default_threshold_days = ?, default_weight_g = ?
+             SET slug = ?, title = ?, default_expiry_days = ?, default_threshold_days = ?, default_weight_g = ?
              WHERE id = ?',
             [
+                $data['slug'],
                 $data['title'],
                 $data['default_expiry_days'],
                 $data['default_threshold_days'],
@@ -124,6 +125,15 @@ final class TypeRepository
                 $id,
             ]
         );
+    }
+
+    public function slugExists(string $slug, ?int $exceptId = null): bool
+    {
+        if ($exceptId === null) {
+            return (bool) $this->db->fetchValue('SELECT 1 FROM types WHERE slug = ?', [$slug]);
+        }
+
+        return (bool) $this->db->fetchValue('SELECT 1 FROM types WHERE slug = ? AND id <> ?', [$slug, $exceptId]);
     }
 
     public function delete(int $id): void

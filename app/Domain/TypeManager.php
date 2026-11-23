@@ -15,6 +15,15 @@ final class TypeManager
 {
     public const SYSTEM_SLUG = 'разное';
 
+    private const TRANSLIT = [
+        'а' => 'a', 'б' => 'b', 'в' => 'v', 'г' => 'g', 'д' => 'd', 'е' => 'e',
+        'ё' => 'e', 'ж' => 'zh', 'з' => 'z', 'и' => 'i', 'й' => 'y', 'к' => 'k',
+        'л' => 'l', 'м' => 'm', 'н' => 'n', 'о' => 'o', 'п' => 'p', 'р' => 'r',
+        'с' => 's', 'т' => 't', 'у' => 'u', 'ф' => 'f', 'х' => 'h', 'ц' => 'c',
+        'ч' => 'ch', 'ш' => 'sh', 'щ' => 'sch', 'ъ' => '', 'ы' => 'y', 'ь' => '',
+        'э' => 'e', 'ю' => 'yu', 'я' => 'ya',
+    ];
+
     private TypeRepository $types;
 
     public function __construct(private readonly AppDatabase $db)
@@ -26,7 +35,7 @@ final class TypeManager
     public function create(array $data): array
     {
         $normalized = $this->validate($data);
-        $normalized['slug'] = $this->uniqueSlug($this->slugify($normalized['title']));
+        $normalized['slug'] = $normalized['slug'] ?? $this->uniqueSlug($this->slugify($normalized['title']));
         $normalized['sort_order'] = $this->types->nextSortOrder();
 
         $id = $this->types->create($normalized);
@@ -37,8 +46,9 @@ final class TypeManager
     /** @return array<string, mixed> */
     public function update(int $id, array $data): array
     {
-        $this->require($id);
-        $normalized = $this->validate($data, $id);
+        $type = $this->require($id);
+        $normalized = $this->validate($data, $id, (string) $type['slug']);
+        $normalized['slug'] = $normalized['slug'] ?? (string) $type['slug'];
 
         $this->types->update($id, $normalized);
 
@@ -123,8 +133,8 @@ final class TypeManager
         return $type;
     }
 
-    /** @return array{title: string, default_expiry_days: int, default_threshold_days: int, default_weight_g: int|null} */
-    private function validate(array $data, ?int $exceptId = null): array
+    /** @return array{title: string, slug: string|null, default_expiry_days: int, default_threshold_days: int, default_weight_g: int|null} */
+    private function validate(array $data, ?int $exceptId = null, ?string $currentSlug = null): array
     {
         $title = trim((string) ($data['title'] ?? ''));
 
@@ -138,6 +148,29 @@ final class TypeManager
 
         if ($this->types->titleExists($title, $exceptId)) {
             throw new HttpException('Тип с таким названием уже есть', 422);
+        }
+
+        $slug = null;
+        $rawSlug = trim((string) ($data['slug'] ?? ''));
+
+        if ($rawSlug !== '') {
+            $slug = $this->normalizeSlug($rawSlug);
+
+            if ($slug === '') {
+                throw new HttpException('Slug не может быть пустым', 422);
+            }
+
+            if ($currentSlug === self::SYSTEM_SLUG && $slug !== self::SYSTEM_SLUG) {
+                throw new HttpException('Slug системного типа «Разное» менять нельзя', 422);
+            }
+
+            if ($slug === self::SYSTEM_SLUG && $currentSlug !== self::SYSTEM_SLUG) {
+                throw new HttpException('Slug «' . self::SYSTEM_SLUG . '» зарезервирован', 422);
+            }
+
+            if ($this->types->slugExists($slug, $exceptId)) {
+                throw new HttpException('Такой slug уже занят', 422);
+            }
         }
 
         $expiry = filter_var($data['default_expiry_days'] ?? 30, FILTER_VALIDATE_INT, [
@@ -169,6 +202,7 @@ final class TypeManager
 
         return [
             'title'                  => $title,
+            'slug'                   => $slug,
             'default_expiry_days'    => (int) $expiry,
             'default_threshold_days' => (int) $threshold,
             'default_weight_g'       => $weight,
@@ -178,11 +212,23 @@ final class TypeManager
     private function slugify(string $title): string
     {
         $slug = mb_strtolower(trim($title));
-        $slug = preg_replace('/\s+/u', '_', $slug) ?? '';
-        $slug = preg_replace('/[^\p{L}\p{N}_-]+/u', '', $slug) ?? '';
-        $slug = trim($slug, '_-');
+        $slug = strtr($slug, self::TRANSLIT);
+        $slug = $this->normalizeSlug($slug);
 
         return $slug !== '' ? $slug : 'type';
+    }
+
+    private function normalizeSlug(string $value): string
+    {
+        $slug = mb_strtolower(trim($value));
+        $slug = preg_replace('/[^\p{L}\p{N}_-]+/u', '_', $slug) ?? '';
+        $slug = trim($slug, '_-');
+
+        if (mb_strlen($slug) > 64) {
+            $slug = rtrim(mb_substr($slug, 0, 64), '_-');
+        }
+
+        return $slug;
     }
 
     private function uniqueSlug(string $base): string

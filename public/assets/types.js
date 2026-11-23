@@ -8,6 +8,15 @@
         config: null,
         types: [],
         editing: null,
+        slugTouched: false,
+    };
+
+    const TRANSLIT = {
+        'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
+        'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+        'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+        'ф': 'f', 'х': 'h', 'ц': 'c', 'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '',
+        'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
     };
 
     const ui = {
@@ -20,7 +29,9 @@
         sheetTitle: $('#sheetTitle'),
         form: $('#typeForm'),
         formError: $('#formError'),
+        slug: $('#slug'),
         slugHint: $('#slugHint'),
+        title: $('#title'),
         toasts: $('#toasts'),
     };
 
@@ -46,6 +57,14 @@
         }
 
         return `${value} г`;
+    }
+
+    function slugify(value) {
+        let slug = String(value || '').toLowerCase().trim();
+        slug = slug.replace(/[а-яё]/g, (ch) => TRANSLIT[ch] ?? '');
+        slug = slug.replace(/[^\p{L}\p{N}_-]+/gu, '_').replace(/^[_-]+|[_-]+$/g, '');
+
+        return slug.slice(0, 64);
     }
 
     function toast(message, tone) {
@@ -152,12 +171,13 @@
         $('#thresholdDays').value = type ? type.default_threshold_days : 7;
         $('#weightG').value = type && type.default_weight_g ? type.default_weight_g : '';
 
-        if (type) {
-            ui.slugHint.textContent = `slug: ${type.slug} (не меняется при переименовании)`;
-            ui.slugHint.hidden = false;
-        } else {
-            ui.slugHint.hidden = true;
-        }
+        state.slugTouched = Boolean(type);
+        ui.slug.value = type ? type.slug : '';
+        ui.slug.disabled = Boolean(type && type.is_system);
+        $('#btnGenerateSlug').disabled = Boolean(type && type.is_system);
+        ui.slugHint.textContent = type && type.is_system
+            ? 'slug системного типа менять нельзя'
+            : 'Латиница или кириллица, цифры, «_» и «-». Кнопка сгенерирует латинский вариант.';
 
         ui.sheetTitle.textContent = type ? 'Изменить тип' : 'Новый тип';
         $('#submitBtn').textContent = type ? 'Сохранить' : 'Добавить';
@@ -182,6 +202,7 @@
     function parsePayload() {
         return {
             title: $('#title').value.trim(),
+            slug: ui.slug.value.trim(),
             default_expiry_days: Number($('#expiryDays').value),
             default_threshold_days: Number($('#thresholdDays').value),
             default_weight_g: $('#weightG').value === '' ? null : Number($('#weightG').value),
@@ -294,6 +315,23 @@
         $('#btnAddType').addEventListener('click', () => openSheet(null));
         $('#btnTheme').addEventListener('click', () => window.Theme.toggle());
         ui.form.addEventListener('submit', submitForm);
+
+        ui.title.addEventListener('input', () => {
+            if (!state.slugTouched && !ui.slug.disabled) {
+                ui.slug.value = slugify(ui.title.value);
+            }
+        });
+
+        ui.slug.addEventListener('input', () => {
+            // An empty slug is "not touched": typing the title should fill it again.
+            state.slugTouched = ui.slug.value.trim() !== '';
+        });
+
+        $('#btnGenerateSlug').addEventListener('click', () => {
+            ui.slug.value = slugify(ui.title.value);
+            state.slugTouched = false;
+            ui.slug.focus();
+        });
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && !ui.sheet.hidden) {

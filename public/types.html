@@ -68,7 +68,15 @@
             <label class="field">
                 <span class="field__label">Название</span>
                 <input class="input" id="title" name="title" required maxlength="128" autocomplete="off" placeholder="Например, Заморозка">
-                <span class="field__hint" id="slugHint" hidden></span>
+            </label>
+
+            <label class="field">
+                <span class="field__label">Slug</span>
+                <div class="input-group">
+                    <input class="input" id="slug" name="slug" maxlength="64" autocomplete="off" placeholder="генерируется из названия">
+                    <button class="btn input--suffix-btn" type="button" id="btnGenerateSlug">Сгенерировать</button>
+                </div>
+                <span class="field__hint" id="slugHint">Латиница или кириллица, цифры, «_» и «-». Кнопка сгенерирует латинский вариант.</span>
             </label>
 
             <div class="field-row">
