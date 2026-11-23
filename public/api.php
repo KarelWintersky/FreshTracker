@@ -12,12 +12,11 @@ if (!defined("CONFIG_PATH")) { define("CONFIG_PATH", $_SERVER['APP_CONFIG'] ?? _
 if (!defined("DATABASE_PATH")) { define("DATABASE_PATH", $_SERVER['APP_DATABASE'] ?? __DIR__ . '/../freshtracker.sqlite' ); };
 
 if (!defined("START_TIME")) { define("START_TIME", microtime(true)); }
-if (!defined("PHAR_PATH")) { define("PHAR_PATH", __DIR__ . '/../freshtracker.phar'); }
 
-if (is_file(PHAR_PATH)) {
-    require_once PHAR_PATH;
-} else {
+if (is_file('/../vendor/autoload.php')) {
     require_once __DIR__ . '/../vendor/autoload.php';
+} else {
+    require_once __DIR__ . '/../freshtracker.phar';
 }
 
 App::init([]);
