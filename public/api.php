@@ -11,15 +11,20 @@ use FreshTracker\Http\Router;
 
 $root = dirname(__DIR__);
 $autoload = $root . '/vendor/autoload.php';
+$phar = $root . '/freshtracker.phar';
 
-if (!is_file($autoload)) {
+if (is_file($autoload)) {
+    // Source checkout: never let a stale PHAR shadow the live code.
+    require $autoload;
+} elseif (is_file($phar)) {
+    // Minimal deployment: public/ + freshtracker.phar + config + database.
+    require $phar;
+} else {
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['status' => 'error', 'message' => 'Composer dependencies are not installed']);
+    echo json_encode(['status' => 'error', 'message' => 'Application code is not installed (vendor/ or freshtracker.phar)']);
     exit;
 }
-
-require $autoload;
 
 try {
     App::boot($root);

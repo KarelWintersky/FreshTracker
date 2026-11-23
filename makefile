@@ -1,5 +1,5 @@
 #!/usr/bin/make
-.PHONY: help install update build test test-legacy serve dchv dchr dchn
+.PHONY: help install update build phar phar-local test test-legacy serve dchv dchr dchn
 
 PACKAGE_NAME = freshtracker
 PROJECT = freshtracker
@@ -21,7 +21,7 @@ install: ##@system Install package. Don't run it manually!!!
 	@# Append version comment to index.html
 	@echo "" >> $(PATH_PUBLIC)/$(INDEX_FILE)
 	@printf "\n<!-- Version $(VERSION), from $(DATE), commit hash '$(COMMIT_HASH)' -->\n" >> $(PATH_PUBLIC)/$(INDEX_FILE)
-	@printf "\n<!-- Version $(VERSION), from $(DATE), commit hash '$(COMMIT_HASH)' -->\n" >> $(PATH_PROJECT)/_version
+	@printf "\n<!-- Version $(VERSION), from $(DATE), commit hash '$(COMMIT_HASH)' -->\n" >> $(PATH_PUBLIC)/_version
 	@sed -i 's/VERSION_PLACEHOLDER/Version $(VERSION), build date: $(DATE), build hash: $(COMMIT_HASH)"/' $(PATH_PUBLIC)/$(INDEX_FILE)
 
 build:		##@build Build project
@@ -39,6 +39,16 @@ test-legacy:	##@development Run the dependency-free legacy test runner
 
 serve:		##@development Run the development server on 127.0.0.1:8080
 	@php -S 127.0.0.1:8080 -t public public/router.php
+
+phar:		##@build Build production PHAR via Docker + Box (build.sh)
+	@bash build.sh
+
+phar-local:	##@build Build production PHAR without Docker (built-in builder)
+	@set -e; \
+	trap 'composer install >/dev/null 2>&1' EXIT; \
+	composer install --no-dev --optimize-autoloader --classmap-authoritative; \
+	php -d phar.readonly=0 tools/build-phar.php; \
+	ls -lh freshtracker.phar
 
 update:		##@build Update project from GIT
 	@echo Updating project from GIT

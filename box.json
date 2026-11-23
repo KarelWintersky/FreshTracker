@@ -1,0 +1,41 @@
+{
+    "main": "vendor/autoload.php",
+    "output": "freshtracker.phar",
+    "stub": false,
+    "compression": "GZ",
+    "check-requirements": false,
+    "compactors": [
+        "KevinGH\\Box\\Compactor\\Php"
+    ],
+    "finder": [
+        {
+            "name": "*.php",
+            "in": ["app"]
+        },
+        {
+            "name": ["*.php", "*.json", "*.h", "*.so", "*.dll"],
+            "in": "vendor",
+            "exclude": [
+                ".github",
+                ".editorconfig",
+                "infection.json.dist",
+                ".php-cs-fixer.dist.php",
+                "*.exe",
+                "*.md",
+                "LICENSE",
+                "psalm.xml",
+                "test",
+                "tests",
+                "Tests",
+                "examples",
+                ".gitignore",
+                ".hhconfig",
+                ".travis*",
+                "phpunit*",
+                "docs",
+                "doc"
+            ]
+        }
+    ],
+    "dump-autoload": true
+}

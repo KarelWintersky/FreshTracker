@@ -69,6 +69,32 @@ server {
 Конфиг, БД, логи и `var/secret` держите вне webroot — например, в
 `/etc/freshtracker/` и `/var/lib/freshtracker/`.
 
+## PHAR и минимальный деплой
+
+`make phar` собирает `freshtracker.phar` из `app/` и `vendor/` через Docker +
+Box (`build.sh`, конфиг `box.json`). Box и его зависимости (PHP 8.3, sodium)
+живут внутри контейнера — локальный PHP не важен. Если `box.phar` лежит в корне
+проекта, он копируется в образ, иначе скачивается Box 4.5.0.
+
+Без Docker: `make phar-local` — встроенный сборщик `tools/build-phar.php`
+(`phar.readonly=0` передаётся автоматически). На время обеих сборок ставится
+`--no-dev`, после — dev-зависимости восстанавливаются.
+
+На проде достаточно:
+
+```
+/var/www/freshtracker/
+├── public/              # docroot: index.html, types.html, assets
+├── freshtracker.phar    # app/ + vendor/
+├── freshtracker.yaml
+└── freshtracker.sqlite
+```
+
+`public/api.php` подключает `vendor/autoload.php`, если он есть, иначе
+`freshtracker.phar`. В git-чекауте всегда работает исходник; на минимальном
+деплое — только phar. Если лежат оба, приоритет у исходников, чтобы устаревшая
+сборка не перекрывала живой код.
+
 ## Конфигурация
 
 Приоритет:
@@ -232,7 +258,7 @@ PHPUnit-набор: 34 теста — вес, даты, статусы, матр
 
 ## Версия и ветки
 
-Текущая версия — `0.4.14`. Источник версии — `app/Config/Version.php`; она же
+Текущая версия — `0.4.15`. Источник версии — `app/Config/Version.php`; она же
 показывается в «О программе». Релизные теги — по мере готовности.
 
 Разработка Go-версии (один бинарник: веб-сервер, SQLite, роутинг, встроенный

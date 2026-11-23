@@ -58,6 +58,9 @@ tests/                         PHPUnit suite (+ Support/DatabaseTestCase)
 tests/legacy_tests.php         dependency-free legacy runner
 phpunit.xml                    PHPUnit config (tests/, source app/)
 freshtracker.dist.yaml         documented config template
+box.json                       Box config (app + vendor, no public/)
+build.sh                       Docker + Box PHAR builder (make phar)
+tools/build-phar.php           dependency-free PHAR builder (make phar-local)
 ```
 
 ## Config
@@ -172,10 +175,19 @@ PHPUnit classes: `WeightTest`, `ExpiryTest`, `ProductStatusTest`,
 in `Tests\Support\DatabaseTestCase`. Covers the same behaviors as the legacy
 runner (34 vs 33 tests) plus PHPUnit reporting and filters.
 
-## CLI / PHAR
+## PHAR (web)
 
-There is no separate CLI or PHAR build. Migrations run on boot; the web app always
-runs from source. (A Go single-binary port is planned in `TODO_GOLANG.md`.)
+There is no separate CLI. Migrations run on boot.
+
+`make phar` builds `freshtracker.phar` from `app/` + `vendor/` via Docker + Box
+(`build.sh`, `box.json`); the container provides PHP 8.3 and sodium. `make
+phar-local` is the dependency-free fallback (`tools/build-phar.php`,
+`phar.readonly=0`). Both install `--no-dev` for the build and restore dev deps
+afterwards. A minimal production deploy needs only `public/`, the PHAR,
+`freshtracker.yaml` and the SQLite file.
+`public/api.php` prefers `vendor/autoload.php` when present and falls back to the
+PHAR otherwise, so a stale PHAR never shadows a source checkout. A Go single-binary
+port is planned in `TODO_GOLANG.md`.
 
 ## Status / TODO
 
@@ -199,3 +211,5 @@ runs from source. (A Go single-binary port is planned in `TODO_GOLANG.md`.)
   README rewritten; `TODO_GOLANG.md` added.
 - 0.4.14 — PHPUnit 11 added; tests converted to classes; `tests/run.php`
   preserved as `tests/legacy_tests.php`.
+- 0.4.15 — web PHAR restored (`box.json`, `make phar`, `api.php` fallback
+  to `freshtracker.phar` when `vendor/` is absent).
