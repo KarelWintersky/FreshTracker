@@ -79,7 +79,7 @@ svg { display: block; }
 .main {
     max-width: 920px;
     margin: 0 auto;
-    padding: 16px 16px 96px;
+    padding: 16px 16px 24px;
 }
 
 .view { animation: fade 0.18s ease; }
@@ -124,7 +124,6 @@ svg { display: block; }
     display: inline-flex;
     gap: 4px;
     padding: 4px;
-    margin-bottom: 14px;
     border-radius: 12px;
     background: var(--color-surface-2);
 }
@@ -146,6 +145,26 @@ svg { display: block; }
 }
 
 .tabs__btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+.viewbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.add-btn {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 8px 16px;
+}
+
+.add-btn__icon {
+    margin-top: -2px;
+    font-size: 1.2rem;
+    line-height: 1;
+}
 
 /* ── Toolbar ────────────────────────────────────────────── */
 
@@ -355,28 +374,6 @@ svg { display: block; }
 
 .btn--danger:hover { background: var(--color-danger); color: #ffffff; }
 
-/* ── FAB ────────────────────────────────────────────────── */
-
-.fab {
-    position: fixed;
-    right: 18px;
-    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-    z-index: 40;
-    width: 56px;
-    height: 56px;
-    border: 0;
-    border-radius: 50%;
-    background: var(--color-primary);
-    color: #ffffff;
-    font-size: 1.9rem;
-    line-height: 1;
-    box-shadow: 0 8px 24px rgba(9, 105, 218, 0.35);
-    transition: transform 0.15s ease, background-color 0.15s ease;
-}
-
-.fab:hover { transform: translateY(-2px); background: var(--color-primary-hover); }
-.fab:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
-
 /* ── Empty / loading ────────────────────────────────────── */
 
 .empty {
@@ -560,7 +557,7 @@ svg { display: block; }
 .toasts {
     position: fixed;
     left: 50%;
-    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     z-index: 120;
     display: flex;
     flex-direction: column;
@@ -613,7 +610,7 @@ svg { display: block; }
     html { font-size: 16px; }
 
     .header__inner { padding: 12px 24px; }
-    .main { padding: 24px 24px 110px; }
+    .main { padding: 24px 24px 40px; }
 
     .summary { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
     .card { padding: 14px 16px; }
@@ -632,22 +629,6 @@ svg { display: block; }
 
     .item__actions { justify-content: flex-end; }
 
-    .fab {
-        right: auto;
-        left: 50%;
-        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-        transform: translateX(-50%);
-        box-shadow: 0 10px 30px rgba(9, 105, 218, 0.38);
-    }
-
-    .fab:hover {
-        transform: translate(-50%, -2px);
-    }
-
-    .toasts {
-        bottom: calc(100px + env(safe-area-inset-bottom, 0px));
-    }
-
     .sheet { align-items: center; padding: 24px; }
     .sheet__panel {
         max-width: 560px;
@@ -664,6 +645,8 @@ svg { display: block; }
     .field-row { grid-template-columns: 1fr; }
     .stats { grid-template-columns: 1fr; }
     .item__name { font-size: 0.96rem; }
+    .add-btn { width: 42px; min-height: 42px; padding: 0; }
+    .add-btn__text { display: none; }
 }
 
 /* ── Small additions ────────────────────────────────────── */
@@ -677,8 +660,6 @@ svg { display: block; }
 }
 
 body.is-locked { overflow: hidden; }
-
-.is-readonly .fab { display: none; }
 
 @media (min-width: 720px) {
     .summary__foot { grid-column: 1 / -1; }

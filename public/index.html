@@ -35,10 +35,15 @@
     <main class="main">
         <section class="summary" id="summary" aria-label="Сводка"></section>
 
-        <nav class="tabs" role="tablist" aria-label="Разделы">
-            <button class="tabs__btn is-active" type="button" role="tab" data-view="active" aria-selected="true">Продукты</button>
-            <button class="tabs__btn" type="button" role="tab" data-view="history" aria-selected="false">История</button>
-        </nav>
+        <div class="viewbar">
+            <nav class="tabs" role="tablist" aria-label="Разделы">
+                <button class="tabs__btn is-active" type="button" role="tab" data-view="active" aria-selected="true">Продукты</button>
+                <button class="tabs__btn" type="button" role="tab" data-view="history" aria-selected="false">История</button>
+            </nav>
+            <button class="btn btn--primary add-btn" id="btnAdd" type="button" aria-label="Добавить продукт">
+                <span class="add-btn__icon" aria-hidden="true">+</span><span class="add-btn__text">Добавить</span>
+            </button>
+        </div>
 
         <section class="view" id="viewActive">
             <div class="toolbar">
@@ -57,7 +62,6 @@
         </section>
     </main>
 
-    <button class="fab" id="btnAdd" type="button" title="Добавить продукт" aria-label="Добавить продукт">+</button>
 </div>
 
 <div class="blocked" id="blocked" hidden>
