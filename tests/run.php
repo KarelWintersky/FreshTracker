@@ -216,6 +216,16 @@ test('legacy access.admin is mapped to local networks', function (): void {
     same('local', $context->group);
 });
 
+test('public can be hidden completely', function (): void {
+    $policy = policy(['public' => ['visible' => false, 'password' => '', 'editable' => 'never']]);
+    $context = $policy->context('8.8.8.8', session());
+
+    same('none', $context->group);
+    check(!$context->canView);
+    check(!$context->canEdit);
+    check(!$policy->canRequestPassword('public'));
+});
+
 echo "Database and migration\n";
 
 test('legacy schema is rebuilt into grams and statuses', function (): void {

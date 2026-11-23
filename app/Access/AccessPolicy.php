@@ -16,6 +16,7 @@ final class AccessPolicy
 
     private bool $localVisible;
     private string $localPassword;
+    private bool $publicVisible;
     private string $publicPassword;
     private string $publicEditable;
 
@@ -23,12 +24,14 @@ final class AccessPolicy
         array $localNetworks,
         bool $localVisible,
         string $localPassword,
+        bool $publicVisible,
         string $publicPassword,
         string $publicEditable,
         private readonly LoggerInterface $logger,
     ) {
         $this->localVisible = $localVisible;
         $this->localPassword = $localPassword;
+        $this->publicVisible = $publicVisible;
         $this->publicPassword = $publicPassword;
         $this->publicEditable = strtolower($publicEditable);
 
@@ -87,10 +90,16 @@ final class AccessPolicy
             $networks = [$networks];
         }
 
+        $publicVisible = $public['visible'] ?? 'always';
+        if (is_string($publicVisible)) {
+            $publicVisible = !in_array(strtolower($publicVisible), ['false', 'never', 'hidden', 'no', '0'], true);
+        }
+
         return new self(
             array_values(array_filter((array) $networks, 'is_string')),
             (bool) ($local['visible'] ?? true),
             (string) ($local['password'] ?? ''),
+            (bool) $publicVisible,
             (string) ($public['password'] ?? ''),
             (string) ($public['editable'] ?? 'never'),
             $logger,
@@ -112,6 +121,10 @@ final class AccessPolicy
             );
         }
 
+        if (!$this->publicVisible) {
+            return AccessContext::denied();
+        }
+
         if ($this->publicEditable === 'always') {
             return new AccessContext('public', true, true, '');
         }
@@ -127,7 +140,9 @@ final class AccessPolicy
     {
         return match ($scope) {
             'local'  => $this->localPassword !== '',
-            'public' => $this->publicEditable === 'password' && $this->publicPassword !== '',
+            'public' => $this->publicVisible
+                && $this->publicEditable === 'password'
+                && $this->publicPassword !== '',
             default  => false,
         };
     }

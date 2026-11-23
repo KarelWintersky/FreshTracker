@@ -69,7 +69,8 @@ editable), `security` (secret, trusted_proxies), `logging`, `defaults`,
 Access resolution (`Access\AccessPolicy::context`):
 - IP in `local.networks` → group `local`; `visible: false` denies everything;
   edit allowed when `password` is empty or the `ft_edit` cookie grants `local`.
-- Otherwise group `public`; read always; edit per `editable`:
+- Otherwise group `public`; `visible: false` denies everything (safety valve);
+  otherwise read is always allowed; edit per `editable`:
   `always` → yes; `password` → only with grant (empty password = fail closed);
   `never` → no.
 - Passwords are plaintext in config, compared with `hash_equals`.

@@ -12,12 +12,16 @@ final class ConfigController
     public function get(): never
     {
         $context = App::context();
+        $theme = strtolower((string) App::config('app.theme', 'day'));
+        if (!in_array($theme, ['day', 'night'], true)) {
+            $theme = 'day';
+        }
 
         Response::ok([
             'app' => [
                 'name'    => (string) App::config('app.name', 'FreshTracker'),
                 'version' => App::version(),
-                'theme'   => (string) App::config('app.theme', 'day'),
+                'theme'   => $theme,
             ],
             'access' => [
                 'group'          => $context->group,

@@ -29,8 +29,8 @@ access:
 
   # Everyone else.
   public:
-    # The inventory is always readable from outside; use editable: never
-    # if the installation must stay read-only.
+    # always — the inventory is readable from outside.
+    # false — hide the app from every address outside access.local.networks.
     visible: always
     # Password used to unlock editing. Ignored when editable: always.
     password: ''

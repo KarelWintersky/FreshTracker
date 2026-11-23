@@ -71,7 +71,7 @@ access:
     visible: true       # false — полностью скрыть приложение от этих сетей
     password: ''        # пусто — редактирование без пароля
   public:               # все остальные
-    visible: always     # чтение разрешено всегда
+    visible: always     # false — полностью скрыть приложение снаружи
     password: ''        # пароль на редактирование
     editable: never     # always | password | never
 
@@ -89,10 +89,10 @@ logging:
 | Кто | Чтение | Редактирование |
 |---|---|---|
 | IP из `access.local.networks` | `visible: true` | всегда; если задан `password` — после его ввода |
-| Остальные (`public`) | всегда | `editable: always` / `password` / `never` |
+| Остальные (`public`) | `visible: always` (по умолчанию) | `editable: always` / `password` / `never` |
 
 - `local` имеет приоритет над `public`. `visible: false` у local — отказ, без
-  фолбэка в public.
+  фолбэка в public; `visible: false` у public закрывает доступ всем остальным.
 - Пустой пароль при `editable: password` означает «редактирование запрещено»
   (fail closed), а не «открыто».
 - Пароль хранится в конфиге в открытом виде; сравнение — `hash_equals`.
